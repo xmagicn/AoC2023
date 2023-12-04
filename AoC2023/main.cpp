@@ -567,7 +567,132 @@ int Year23Day3Part2(const std::string& Filename)
 	return CurrentSum;
 }
 
+// Space separated sting of numbers
+void ReadNumbersIntoArray(const std::string& Numbers, std::vector<int>& OutNumbers)
+{
+	std::string Temp;
+	for (const auto& Char : Numbers)
+	{
+		if (isdigit(Char))
+		{
+			Temp += Char;
+		}
+		else if (!Temp.empty())
+		{
+			OutNumbers.push_back(std::stoi(Temp));
+			Temp.clear();
+		}
+	}
+
+	// Lazy: handle the last one
+	if (!Temp.empty())
+	{
+		OutNumbers.push_back(std::stoi(Temp));
+		Temp.clear();
+	}
+}
+
+void ReadCard(const std::string& CardString, std::vector<int>& OutCardNumbers, std::vector<int>& OutWinningNumbers)
+{
+	size_t CardStartPos = CardString.find(':');
+	if (CardStartPos == std::string::npos)
+	{
+		return;
+	}
+
+	CardStartPos += 2;
+
+	size_t WinningNumbersStartPos = CardString.find('|');
+	if (CardStartPos == std::string::npos)
+	{
+		return;
+	}
+
+	ReadNumbersIntoArray(CardString.substr(CardStartPos, WinningNumbersStartPos - CardStartPos), OutCardNumbers);
+	ReadNumbersIntoArray(CardString.substr(WinningNumbersStartPos), OutWinningNumbers);
+}
+
 int Year23Day4Part1(const std::string& Filename)
+{
+	std::ifstream myfile;
+	myfile.open(Filename);
+
+	int CurrentSum = 0;
+
+	while (myfile.good())
+	{
+		char line[256];
+		myfile.getline(line, 256);
+		std::string Line(line);
+
+		std::vector<int> CardNumbers, WinningNumbers;
+		ReadCard(Line, CardNumbers, WinningNumbers);
+
+		// Calculate the wins so we can use them later
+		int WinCt = 0;
+		for (int Number : CardNumbers)
+		{
+			if (std::find(WinningNumbers.begin(), WinningNumbers.end(), Number) != WinningNumbers.end())
+			{
+				++WinCt;
+			}
+		}
+
+		// Apply grading metric (must be phrased as annoyingly as possible)
+		CurrentSum += std::pow(2, WinCt - 1);
+	}
+
+	myfile.close();
+
+	return CurrentSum;
+}
+
+int Year23Day4Part2(const std::string& Filename)
+{
+	std::ifstream myfile;
+	myfile.open(Filename);
+
+	int CurrentSum = 0;
+	int GameCt = 1;
+	std::unordered_map<int, int> GameToBonusMap;
+
+	while (myfile.good())
+	{
+		char line[256];
+		myfile.getline(line, 256);
+		std::string Line(line);
+
+		std::vector<int> CardNumbers, WinningNumbers;
+		ReadCard(Line, CardNumbers, WinningNumbers);
+
+		// Calculate the wins so we can use them later
+		int WinCt = 0;
+		for (int Number : CardNumbers)
+		{
+			if (std::find(WinningNumbers.begin(), WinningNumbers.end(), Number) != WinningNumbers.end())
+			{
+				++WinCt;
+			}
+		}
+
+		// Apply grading metric (must be phrased as annoyingly as possible)
+		int TotalCopiesOfThisCard = (1 + GameToBonusMap[GameCt]);
+		CurrentSum += TotalCopiesOfThisCard;
+		while (WinCt > 0)
+		{
+			GameToBonusMap[GameCt + WinCt] += TotalCopiesOfThisCard;
+			--WinCt;
+		}
+
+		++GameCt;
+	}
+
+	myfile.close();
+
+	return CurrentSum;
+}
+
+int Year23Day5Part1(const std::string& Filename)
 {
 	std::ifstream myfile;
 	myfile.open(Filename);
@@ -586,7 +711,7 @@ int Year23Day4Part1(const std::string& Filename)
 	return CurrentSum;
 }
 
-int Year23Day4Part2(const std::string& Filename)
+int Year23Day5Part2(const std::string& Filename)
 {
 	std::ifstream myfile;
 	myfile.open(Filename);
@@ -632,7 +757,6 @@ int main()
 	std::cout << "Day3Part1: " << Year23Day3Part1( Day3Input ) << std::endl;
 	std::cout << "Day3Part2Sample: " << Year23Day3Part2( Day3Sample ) << std::endl;
 	std::cout << "Day3Part2: " << Year23Day3Part2( Day3Input ) << std::endl;
-	*/
 
 	std::string Day4Sample( "..\\Input\\Day4Sample.txt" );
 	std::string Day4Input( "..\\Input\\Day4Input.txt" );
@@ -640,17 +764,17 @@ int main()
 	std::cout << "Day4Part1: " << Year23Day4Part1( Day4Input ) << std::endl;
 	std::cout << "Day4Part2Sample: " << Year23Day4Part2( Day4Sample ) << std::endl;
 	std::cout << "Day4Part2: " << Year23Day4Part2( Day4Input ) << std::endl;
+	*/
 
-	/*
 	std::string Day5Sample( "..\\..\\Day5Sample.txt" );
 	std::string Day5Input("..\\Input\\Day5Input.txt" );
-	std::cout << "Day5Part1Sample: " << Year23Day5Part1( Day5Sample, 5, SampleStacks ) << std::endl;
-	std::cout << "Day5Part1: " << Year23Day5Part1( Day5Input, 10, InputStacks ) << std::endl;
-	std::cout << "Day5Part2Sample: " << Year23Day5Part2( Day5Sample, 5, SampleStacks ) << std::endl;
-	std::cout << "Day5Part2: " << Year23Day5Part2( Day5Input, 10, InputStacks ) << std::endl;
+	std::cout << "Day5Part1Sample: " << Year23Day5Part1( Day5Sample ) << std::endl;
+	std::cout << "Day5Part1: " << Year23Day5Part1( Day5Input ) << std::endl;
+	std::cout << "Day5Part2Sample: " << Year23Day5Part2( Day5Sample ) << std::endl;
+	std::cout << "Day5Part2: " << Year23Day5Part2( Day5Input ) << std::endl;
 
 
-
+	/*
 	std::string Day6Sample( "..\\..\\Day6Sample.txt" );
 	std::string Day6Input("..\\Input\\Day6Input.txt" );
 	std::cout << "Day6Part1Sample: " << Year23Day6Part1( Day6Sample ) << std::endl;
