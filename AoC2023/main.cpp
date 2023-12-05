@@ -591,6 +591,29 @@ void ReadNumbersIntoArray(const std::string& Numbers, std::vector<int>& OutNumbe
 		Temp.clear();
 	}
 }
+void ReadNumbersIntoArray(const std::string& Numbers, std::vector<unsigned long>& OutNumbers)
+{
+	std::string Temp;
+	for (const auto& Char : Numbers)
+	{
+		if (isdigit(Char))
+		{
+			Temp += Char;
+		}
+		else if (!Temp.empty())
+		{
+			OutNumbers.push_back(std::stoul(Temp));
+			Temp.clear();
+		}
+	}
+
+	// Lazy: handle the last one
+	if (!Temp.empty())
+	{
+		OutNumbers.push_back(std::stoul(Temp));
+		Temp.clear();
+	}
+}
 
 void ReadCard(const std::string& CardString, std::vector<int>& OutCardNumbers, std::vector<int>& OutWinningNumbers)
 {
@@ -639,7 +662,7 @@ int Year23Day4Part1(const std::string& Filename)
 		}
 
 		// Apply grading metric (must be phrased as annoyingly as possible)
-		CurrentSum += std::pow(2, WinCt - 1);
+		CurrentSum += static_cast<int>(std::pow(2, WinCt - 1));
 	}
 
 	myfile.close();
@@ -692,21 +715,202 @@ int Year23Day4Part2(const std::string& Filename)
 	return CurrentSum;
 }
 
-int Year23Day5Part1(const std::string& Filename)
+enum AlmanacMapTypes
 {
-	std::ifstream myfile;
-	myfile.open(Filename);
+	SeedToSoilMap,
+	SoilToFertilizerMap,
+	FertilizerToWaterMap,
+	WaterToLightMap,
+	LightToTempMap,
+	TempToHumidityMap,
+	HumidityToLocMap,
 
-	int CurrentSum = 0;
+	Count
+};
 
-	while (myfile.good())
+struct Almanac
+{
+private:
+	std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>> SeedToSoilMap;
+	std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>> SoilToFertilizerMap;
+	std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>> FertilizerToWaterMap;
+	std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>> WaterToLightMap;
+	std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>> LightToTempMap;
+	std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>> TempToHumidityMap;
+	std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>> HumidityToLocMap;
+
+public:
+	std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>>& GetMap(AlmanacMapTypes MapType)
 	{
-		char line[256];
-		myfile.getline(line, 256);
-		std::string Line(line);
+		switch (MapType)
+		{
+		case AlmanacMapTypes::SeedToSoilMap:
+			return SeedToSoilMap;
+		case AlmanacMapTypes::SoilToFertilizerMap:
+			return SoilToFertilizerMap;
+		case AlmanacMapTypes::FertilizerToWaterMap:
+			return FertilizerToWaterMap;
+		case AlmanacMapTypes::WaterToLightMap:
+			return WaterToLightMap;
+		case AlmanacMapTypes::LightToTempMap:
+			return LightToTempMap;
+		case AlmanacMapTypes::TempToHumidityMap:
+			return TempToHumidityMap;
+		case AlmanacMapTypes::HumidityToLocMap:
+			return HumidityToLocMap;
+		default:
+			//don't @ me
+			return SeedToSoilMap;
+		}
 	}
 
+private:
+	void LoadMapEntry(std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>>& Map, unsigned long Key, unsigned long RangeMin, unsigned long RangeMax)
+	{
+		Map[Key] = std::pair<unsigned long, unsigned long>(RangeMin, RangeMax);
+	}
+	void LoadMapEntry(std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>>& Map, const std::string& InLine)
+	{
+		std::string Temp;
+		int ValIdx = 0;
+		unsigned long Vals[3] = { 0, 0, 0 };
+
+		for (char Entry : InLine)
+		{
+			if (Entry != ' ')
+			{
+				Temp += Entry;
+			}
+			else
+			{
+				if (!Temp.empty())
+				{
+					Vals[ValIdx] = stoul(Temp);
+
+					Temp.clear();
+					++ValIdx;
+					// Unsafe, relies on input being 3 entries
+				}
+			}
+		}
+
+		if (!Temp.empty())
+		{
+			// again, don't @ me
+			Vals[ValIdx] = stoi(Temp);
+		}
+
+		Map[Vals[1]] = std::pair<unsigned long, unsigned long>(Vals[0], Vals[2]);
+	}
+
+	unsigned long TransformId(AlmanacMapTypes MapType, unsigned long InId)
+	{
+		std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>>& CurrMap = GetMap(MapType);
+
+		unsigned long Offset = 0;
+		for (const auto& It : CurrMap)
+		{
+			unsigned long RangeStart = It.first;
+			unsigned long RangeEnd = It.first + It.second.second;
+			if (InId >= RangeStart && InId < RangeEnd)
+			{
+				Offset = It.second.first - RangeStart;
+				break;
+			}
+		}
+
+		return InId + Offset;
+	}
+
+public:
+	void LoadAlmanac(const std::string& Filename)
+	{
+		std::ifstream myfile;
+		myfile.open(Filename);
+
+		bool bSeedsSkipped = false;
+		AlmanacMapTypes CurrMapType = static_cast<AlmanacMapTypes>(0);
+		std::vector<std::string> CurrentEntries;
+
+		while (myfile.good())
+		{
+			char line[512];
+			myfile.getline(line, 512);
+			std::string Line(line);
+
+			if (!Line.empty())
+			{
+				if (isdigit(Line[0]))
+				{
+					CurrentEntries.push_back(Line);
+				}
+			}
+			else
+			{
+				if (bSeedsSkipped)
+				{
+					for (const std::string& Entry : CurrentEntries)
+					{
+						LoadMapEntry(GetMap(CurrMapType), Entry);
+					}
+
+					CurrMapType = static_cast<AlmanacMapTypes>(static_cast<int>(CurrMapType) + 1);
+					CurrentEntries.clear();
+				}
+				else
+				{
+					bSeedsSkipped = true;
+				}
+			}
+		}
+
+		// Once more!
+		for (const std::string& Entry : CurrentEntries)
+		{
+			LoadMapEntry(GetMap(CurrMapType), Entry);
+		}
+
+		myfile.close();
+	}
+
+	unsigned long GetSoilLocationForSeed(unsigned long InSeed)
+	{
+		unsigned long WorkingId = InSeed;
+		for (int MapIdx = 0; MapIdx < static_cast<int>(AlmanacMapTypes::Count); ++MapIdx)
+		{
+			WorkingId = TransformId(static_cast<AlmanacMapTypes>(MapIdx), WorkingId);
+		}
+		return WorkingId;
+	}
+};
+
+unsigned long Year23Day5Part1(const std::string& Filename)
+{
+	unsigned long CurrentSum = ULONG_MAX;
+
+	Almanac Records;
+	Records.LoadAlmanac(Filename);
+
+	// Get the Seeds
+	std::vector<unsigned long> Seeds;
+	std::ifstream myfile;
+
+	myfile.open(Filename);
+	std::string Line;
+	if (myfile.good())
+	{
+		char line[1024];
+		myfile.getline(line, 1024);
+		Line += line;
+	}
 	myfile.close();
+
+	ReadNumbersIntoArray(Line, Seeds);
+
+	for (unsigned long Seed : Seeds)
+	{
+		CurrentSum = std::min(CurrentSum, Records.GetSoilLocationForSeed(Seed));
+	}
 
 	return CurrentSum;
 }
@@ -766,12 +970,12 @@ int main()
 	std::cout << "Day4Part2: " << Year23Day4Part2( Day4Input ) << std::endl;
 	*/
 
-	std::string Day5Sample( "..\\..\\Day5Sample.txt" );
+	std::string Day5Sample( "..\\Input\\Day5Sample.txt" );
 	std::string Day5Input("..\\Input\\Day5Input.txt" );
 	std::cout << "Day5Part1Sample: " << Year23Day5Part1( Day5Sample ) << std::endl;
 	std::cout << "Day5Part1: " << Year23Day5Part1( Day5Input ) << std::endl;
-	std::cout << "Day5Part2Sample: " << Year23Day5Part2( Day5Sample ) << std::endl;
-	std::cout << "Day5Part2: " << Year23Day5Part2( Day5Input ) << std::endl;
+	//std::cout << "Day5Part2Sample: " << Year23Day5Part2( Day5Sample ) << std::endl;
+	//std::cout << "Day5Part2: " << Year23Day5Part2( Day5Input ) << std::endl;
 
 
 	/*
