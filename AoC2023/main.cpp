@@ -971,6 +971,44 @@ unsigned long long Year23Day6Part1(const std::unordered_map<long, long>& Input)
 	return CurrentSum;
 }
 
+int Year23Day7Part1(const std::string& Filename)
+{
+	std::ifstream myfile;
+	myfile.open(Filename);
+
+	int CurrentSum = 0;
+
+	while (myfile.good())
+	{
+		char line[256];
+		myfile.getline(line, 256);
+		std::string Line(line);
+	}
+
+	myfile.close();
+
+	return CurrentSum;
+}
+
+int Year23Day7Part2(const std::string& Filename)
+{
+	std::ifstream myfile;
+	myfile.open(Filename);
+
+	int CurrentSum = 0;
+
+	while (myfile.good())
+	{
+		char line[256];
+		myfile.getline(line, 256);
+		std::string Line(line);
+	}
+
+	myfile.close();
+
+	return CurrentSum;
+}
+
 int main()
 {
 	/*
@@ -1005,7 +1043,6 @@ int main()
 	std::cout << "Day4Part1: " << Year23Day4Part1( Day4Input ) << std::endl;
 	std::cout << "Day4Part2Sample: " << Year23Day4Part2( Day4Sample ) << std::endl;
 	std::cout << "Day4Part2: " << Year23Day4Part2( Day4Input ) << std::endl;
-	*/
 
 	//std::string Day5Sample( "..\\Input\\Day5Sample.txt" );
 	//std::string Day5Input("..\\Input\\Day5Input.txt" );
@@ -1022,8 +1059,8 @@ int main()
 	std::cout << "Day6Part2Sample: " << CalcMaxRaceDistance(71530, 940200) << std::endl;
 	std::cout << "Day6Part2: " << CalcMaxRaceDistance(48938595, 296192812361391) << std::endl;
 
-	/*
 
+	*/
 	std::string Day7Sample( "..\\Input\\Day7Sample.txt" );
 	std::string Day7Input("..\\Input\\Day7Input.txt" );
 	std::cout << "Day7Part1Sample: " << Year23Day7Part1( Day7Sample ) << std::endl;
@@ -1031,6 +1068,7 @@ int main()
 	std::cout << "Day7Part2Sample: " << Year23Day7Part2( Day7Sample ) << std::endl;
 	std::cout << "Day7Part2: " << Year23Day7Part2( Day7Input ) << std::endl;
 
+	/*
 	std::string Day8Sample( "..\\Input\\Day8Sample.txt" );
 	std::string Day8Input("..\\Input\\Day8Input.txt" );
 	std::cout << "Day8Part1Sample: " << Year23Day8Part1( Day8Sample ) << std::endl;
