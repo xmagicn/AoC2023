@@ -934,40 +934,39 @@ int Year23Day5Part2(const std::string& Filename)
 	return CurrentSum;
 }
 
-int Year23Day6Part1(const std::string& Filename)
+unsigned long long CalcMaxRaceDistance(unsigned long long Time, unsigned long long Distance)
 {
-	std::ifstream myfile;
-	myfile.open(Filename);
-
-	int CurrentSum = 0;
-
-	while (myfile.good())
+	unsigned long long RaceDistance = 0;
+	unsigned long long CurrHoldTime = 0;
+	do
 	{
-		char line[256];
-		myfile.getline(line, 256);
-		std::string Line(line);
-	}
+		++CurrHoldTime;
+		RaceDistance = ((Time - CurrHoldTime) * CurrHoldTime);
+	} while (RaceDistance <= Distance);
+	unsigned long long FirstWinTime = CurrHoldTime;
 
-	myfile.close();
+	CurrHoldTime = Time;
+	do
+	{
+		--CurrHoldTime;
+		RaceDistance = ((Time - CurrHoldTime) * CurrHoldTime);
+	} while (RaceDistance <= Distance && CurrHoldTime > 0);
 
-	return CurrentSum;
+	unsigned long long Final = Time - (FirstWinTime) - (Time - CurrHoldTime) + 1;
+	//std::cout << Final << std::endl;
+	return Final;
 }
 
-int Year23Day6Part2(const std::string& Filename)
+unsigned long long Year23Day6Part1(const std::unordered_map<long, long>& Input)
 {
-	std::ifstream myfile;
-	myfile.open(Filename);
+	unsigned long long CurrentSum = 0;
 
-	int CurrentSum = 0;
+	CurrentSum = 1;
 
-	while (myfile.good())
+	for (const auto& Race : Input)
 	{
-		char line[256];
-		myfile.getline(line, 256);
-		std::string Line(line);
+		CurrentSum *= CalcMaxRaceDistance(Race.first, Race.second);
 	}
-
-	myfile.close();
 
 	return CurrentSum;
 }
@@ -1016,12 +1015,12 @@ int main()
 	//std::cout << "Day5Part2: " << Year23Day5Part2( Day5Input ) << std::endl;
 
 
-	std::string Day6Sample( "..\\Input\\Day6Sample.txt" );
-	std::string Day6Input("..\\Input\\Day6Input.txt" );
+	std::unordered_map<long, long> Day6Sample{ {7, 9}, {15, 40}, {30, 200} };
+	std::unordered_map<long, long> Day6Input{ {48, 296}, {93, 1928}, {85, 1236}, {95, 1391} };
 	std::cout << "Day6Part1Sample: " << Year23Day6Part1( Day6Sample ) << std::endl;
 	std::cout << "Day6Part1: " << Year23Day6Part1( Day6Input ) << std::endl;
-	//std::cout << "Day6Part2Sample: " << Year23Day6Part2( Day6Sample ) << std::endl;
-	//std::cout << "Day6Part2: " << Year23Day6Part2( Day6Input ) << std::endl;
+	std::cout << "Day6Part2Sample: " << CalcMaxRaceDistance(71530, 940200) << std::endl;
+	std::cout << "Day6Part2: " << CalcMaxRaceDistance(48938595, 296192812361391) << std::endl;
 
 	/*
 
