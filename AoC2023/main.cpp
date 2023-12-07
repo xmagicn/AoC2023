@@ -4,6 +4,7 @@
 #include <string>
 #include <cmath>
 #include <queue>
+#include <map>
 #include <unordered_map>
 #include <stack>
 #include <set>
@@ -971,7 +972,258 @@ unsigned long long Year23Day6Part1(const std::unordered_map<long, long>& Input)
 	return CurrentSum;
 }
 
+enum class CCWinningHandType
+{
+	HighCard,
+	OnePair,
+	TwoPair,
+	ThreeOfAKind,
+	FullHouse,
+	FourOfAKind,
+	FiveOfAKind,
+
+	Count
+};
+
+CCWinningHandType AddJoker(CCWinningHandType InType, int JokerCt = 1, bool bFlag1 = false, bool bFlag2 = false)
+{
+	CCWinningHandType CurrType = InType;
+	while (JokerCt > 0)
+	{
+		switch (CurrType)
+		{
+		case CCWinningHandType::HighCard:
+			CurrType = CCWinningHandType::OnePair;
+			break;
+		case CCWinningHandType::OnePair:
+			CurrType = CCWinningHandType::ThreeOfAKind;
+			--JokerCt;
+			break;
+		case CCWinningHandType::TwoPair:
+			// If we have a joker in either pair, we only bump to Three
+			CurrType = bFlag1 || bFlag2 ? CCWinningHandType::FourOfAKind : CCWinningHandType::FullHouse;
+			--JokerCt;
+			break;
+		case CCWinningHandType::ThreeOfAKind:
+			CurrType = CCWinningHandType::FourOfAKind;
+			if (bFlag1)
+			{
+				JokerCt -= 2;
+			}
+			break;
+		case CCWinningHandType::FullHouse:
+		case CCWinningHandType::FourOfAKind:
+		case CCWinningHandType::FiveOfAKind:
+			CurrType = CCWinningHandType::FiveOfAKind;
+			break;
+		default:
+			break;
+		}
+
+		if (CurrType == CCWinningHandType::FiveOfAKind)
+		{
+			break;
+		}
+		--JokerCt;
+	}
+
+	return CurrType;
+}
+
+CCWinningHandType GetHandScore(const std::string& InHand, bool bJokersWild = false)
+{
+	CCWinningHandType Output = CCWinningHandType::HighCard;
+	std::unordered_map<char, int> Cards;
+	if (InHand.empty())
+	{
+		return Output;
+	}
+
+	// aggregate
+	for (char InCard : InHand)
+	{
+		++Cards[InCard];
+	}
+
+	// switch 'em
+	std::multimap<char, int, std::greater<int>> OrderedCards;
+	for (const auto& Card : Cards)
+	{
+		OrderedCards.insert({ Card.second, Card.first });
+	}
+
+	bool bJokerSlot1 = false;
+	bool bJokerSlot2 = false;
+	auto It = OrderedCards.begin();
+	if (It ->first == 5)
+	{
+		Output = CCWinningHandType::FiveOfAKind;
+	}
+	else if (It->first == 4)
+	{
+		Output = CCWinningHandType::FourOfAKind;
+	}
+	else if (It->first == 3)
+	{
+		bJokerSlot1 = It->second == '.';
+		++It;
+		if (It->first == 2)
+		{
+			Output = CCWinningHandType::FullHouse;
+		}
+		else
+		{
+			Output = CCWinningHandType::ThreeOfAKind;
+		}
+	}
+	else if (It->first == 2)
+	{
+		bJokerSlot1 |= It->second == '.';
+		++It;
+		if (It->first == 2)
+		{
+			Output = CCWinningHandType::TwoPair;
+			bJokerSlot2 |= It->second == '.';
+		}
+		else
+		{
+			Output = CCWinningHandType::OnePair;
+		}
+	}
+
+	int JokerCt = Cards['.'];
+	if (bJokersWild && JokerCt > 0)
+	{
+		Output = AddJoker(Output, JokerCt, bJokerSlot1, bJokerSlot2);
+	}
+
+	return Output;
+}
+
+struct CamelCardHand
+{
+	CamelCardHand(const std::string& InHand, int InWager, bool bInJokersWild = false)
+		: Cards(InHand), Wager(InWager), bJokersWild(bInJokersWild)
+	{
+		if (Cards.empty())
+		{
+			// bad
+		}
+
+		for (char& Card : Cards)
+		{
+			if (Card == 'T')
+			{
+				// right above 9 in ascii
+				Card = ':';
+			}
+			else if (Card == 'J')
+			{
+				Card = bJokersWild ? '.' : '<';
+			}
+			else if (Card == 'Q')
+			{
+				Card = '=';
+			}
+			else if (Card == 'K')
+			{
+				Card = '>';
+			}
+		}
+		HandType = GetHandScore(Cards, bJokersWild);
+	}
+
+	bool operator<(const CamelCardHand& Other) const
+	{
+		if (static_cast<int>(HandType) != static_cast<int>(Other.HandType))
+		{
+			return static_cast<int>(HandType) < static_cast<int>(Other.HandType);
+		}
+
+		for (int Idx = 0; Idx < Cards.size() && Idx < Other.Cards.size(); ++Idx)
+		{
+			if (Cards[Idx] != Other.Cards[Idx])
+			{
+				return Cards[Idx] < Other.Cards[Idx];
+			}
+		}
+
+		return std::min(Cards.size(), Other.Cards.size());
+	}
+
+	std::string Cards;
+	int32_t Wager;
+	CCWinningHandType HandType;
+	bool bJokersWild;
+};
+
 int Year23Day7Part1(const std::string& Filename)
+{
+	std::ifstream myfile;
+	myfile.open(Filename);
+
+	int CurrentSum = 0;
+
+	std::multiset<CamelCardHand> Hands;
+	while (myfile.good())
+	{
+		char line[256];
+		myfile.getline(line, 256);
+		std::string Line(line);
+
+		size_t SpacePos = Line.find(' ');
+		if (SpacePos != std::string::npos)
+		{
+			Hands.insert(CamelCardHand(Line.substr(0, SpacePos), std::stoi(Line.substr(SpacePos + 1))));
+		}
+	}
+
+	myfile.close();
+
+	int Rank = 1;
+	for (const auto& Hand : Hands)
+	{
+		int Score = Hand.Wager * Rank++;
+		CurrentSum += Score;
+	}
+
+	return CurrentSum;
+}
+
+int Year23Day7Part2(const std::string& Filename)
+{
+	std::ifstream myfile;
+	myfile.open(Filename);
+
+	int CurrentSum = 0;
+
+	std::multiset<CamelCardHand> Hands;
+	while (myfile.good())
+	{
+		char line[256];
+		myfile.getline(line, 256);
+		std::string Line(line);
+
+		size_t SpacePos = Line.find(' ');
+		if (SpacePos != std::string::npos)
+		{
+			Hands.insert(CamelCardHand(Line.substr(0, SpacePos), std::stoi(Line.substr(SpacePos + 1)), true));
+		}
+	}
+
+	myfile.close();
+
+	int Rank = 1;
+	for (const auto& Hand : Hands)
+	{
+		int Score = Hand.Wager * Rank++;
+		CurrentSum += Score;
+	}
+
+	return CurrentSum;
+}
+
+int Year23Day8Part1(const std::string& Filename)
 {
 	std::ifstream myfile;
 	myfile.open(Filename);
@@ -990,7 +1242,7 @@ int Year23Day7Part1(const std::string& Filename)
 	return CurrentSum;
 }
 
-int Year23Day7Part2(const std::string& Filename)
+int Year23Day8Part2(const std::string& Filename)
 {
 	std::ifstream myfile;
 	myfile.open(Filename);
@@ -1060,7 +1312,6 @@ int main()
 	std::cout << "Day6Part2: " << CalcMaxRaceDistance(48938595, 296192812361391) << std::endl;
 
 
-	*/
 	std::string Day7Sample( "..\\Input\\Day7Sample.txt" );
 	std::string Day7Input("..\\Input\\Day7Input.txt" );
 	std::cout << "Day7Part1Sample: " << Year23Day7Part1( Day7Sample ) << std::endl;
@@ -1068,7 +1319,7 @@ int main()
 	std::cout << "Day7Part2Sample: " << Year23Day7Part2( Day7Sample ) << std::endl;
 	std::cout << "Day7Part2: " << Year23Day7Part2( Day7Input ) << std::endl;
 
-	/*
+	*/
 	std::string Day8Sample( "..\\Input\\Day8Sample.txt" );
 	std::string Day8Input("..\\Input\\Day8Input.txt" );
 	std::cout << "Day8Part1Sample: " << Year23Day8Part1( Day8Sample ) << std::endl;
@@ -1076,6 +1327,7 @@ int main()
 	std::cout << "Day8Part2Sample: " << Year23Day8Part2( Day8Sample ) << std::endl;
 	std::cout << "Day8Part2: " << Year23Day8Part2( Day8Input ) << std::endl;
 
+	/*
 	std::string Day9Sample( "..\\Input\\Day9Sample.txt" );
 	std::string Day9Input("..\\Input\\Day9Input.txt" );
 	std::cout << "Day9Part1Sample: " << Year23Day9Part1( Day9Sample, true ) << std::endl;
