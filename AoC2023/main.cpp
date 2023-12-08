@@ -1295,14 +1295,14 @@ int main()
 	std::cout << "Day4Part1: " << Year23Day4Part1( Day4Input ) << std::endl;
 	std::cout << "Day4Part2Sample: " << Year23Day4Part2( Day4Sample ) << std::endl;
 	std::cout << "Day4Part2: " << Year23Day4Part2( Day4Input ) << std::endl;
-
-	//std::string Day5Sample( "..\\Input\\Day5Sample.txt" );
-	//std::string Day5Input("..\\Input\\Day5Input.txt" );
-	//std::cout << "Day5Part1Sample: " << Year23Day5Part1( Day5Sample ) << std::endl;
-	//std::cout << "Day5Part1: " << Year23Day5Part1( Day5Input ) << std::endl;
-	//std::cout << "Day5Part2Sample: " << Year23Day5Part2( Day5Sample ) << std::endl;
-	//std::cout << "Day5Part2: " << Year23Day5Part2( Day5Input ) << std::endl;
-
+	* /
+	std::string Day5Sample( "..\\Input\\Day5Sample.txt" );
+	std::string Day5Input("..\\Input\\Day5Input.txt" );
+	std::cout << "Day5Part1Sample: " << Year23Day5Part1( Day5Sample ) << std::endl;
+	std::cout << "Day5Part1: " << Year23Day5Part1( Day5Input ) << std::endl;
+	std::cout << "Day5Part2Sample: " << Year23Day5Part2( Day5Sample ) << std::endl;
+	std::cout << "Day5Part2: " << Year23Day5Part2( Day5Input ) << std::endl;
+	/*
 
 	std::unordered_map<long, long> Day6Sample{ {7, 9}, {15, 40}, {30, 200} };
 	std::unordered_map<long, long> Day6Input{ {48, 296}, {93, 1928}, {85, 1236}, {95, 1391} };
