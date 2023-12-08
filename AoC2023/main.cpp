@@ -1223,7 +1223,177 @@ int Year23Day7Part2(const std::string& Filename)
 	return CurrentSum;
 }
 
+void AddCamelNode(const std::string& InLine, std::unordered_map < std::string, std::pair<std::string, std::string>>& OutNetwork)
+{
+	if (InLine.size() == 0)
+	{
+		return;
+	}
+
+	const int STRING_SIZE = 3;
+	std::string Key, Left, Right;
+
+	Key = InLine.substr(0, 3);
+	Left = InLine.substr(7, 3);
+	Right = InLine.substr(12, 3);
+
+	OutNetwork[Key] = std::pair<std::string, std::string>(Left, Right);
+}
+
+int RunCamelSimulation(const std::string& Instructions, std::unordered_map<std::string, std::pair<std::string, std::string>>& Network, const std::string& StartingKey, bool bHaunted = false)
+{
+	int CurrentSum = 0;
+	std::string CurrKey(StartingKey);
+	int InstructionOffset = 0;
+
+
+	while (bHaunted ? (CurrKey[2] != 'Z') : (CurrKey != "ZZZ"))
+	{
+		char Dir = Instructions[InstructionOffset]; // should check for validity
+		if (Dir == 'L')
+		{
+			CurrKey = Network[CurrKey].first;
+		}
+		else // should be else if
+		{
+			CurrKey = Network[CurrKey].second;
+		}
+
+		InstructionOffset++;
+		if (InstructionOffset >= Instructions.size())
+		{
+			InstructionOffset = 0;
+		}
+
+		CurrentSum++;
+	}
+
+	return CurrentSum;
+}
+
 int Year23Day8Part1(const std::string& Filename)
+{
+	std::ifstream myfile;
+	myfile.open(Filename);
+
+	int CurrentSum = 0;
+
+	std::string Instructions;
+	if (myfile.good())
+	{
+		char line[512];
+		myfile.getline(line, 512);
+		Instructions += line;
+
+		// Skip the space
+		myfile.getline(line, 512);
+	}
+
+	std::unordered_map<std::string, std::pair<std::string, std::string>> Network;
+	while (myfile.good())
+	{
+		char line[256];
+		myfile.getline(line, 256);
+		std::string Line(line);
+		AddCamelNode(Line, Network);
+	}
+
+	myfile.close();
+
+	CurrentSum = RunCamelSimulation(Instructions, Network, "AAA");
+
+	return CurrentSum;
+}
+
+int GetCompletedKeys(const std::vector<std::string>& InKeys)
+{
+	int NumZs = 0;
+	for (const std::string& Key : InKeys)
+	{
+		if (Key[2] == 'Z')
+		{
+			++NumZs;
+		}
+	}
+	return NumZs;
+}
+
+// [START] - Shamelessly 'borrowed' since i apparently can't have std::lcm
+// Modified to handle ungodly-large numbers
+// Utility function to find
+// GCD of 'a' and 'b'
+unsigned long long int gcd(unsigned long long int a, unsigned long long int b)
+{
+	if (b == 0)
+		return a;
+	return gcd(b, a % b);
+}
+
+// Returns LCM of array elements
+unsigned long long int findlcm(int arr[], int n)
+{
+	// Initialize result
+	long long int ans = arr[0];
+
+	// ans contains LCM of arr[0], ..arr[i]
+	// after i'th iteration,
+	for (int i = 1; i < n; i++)
+		ans = (((arr[i] * ans)) /
+			(gcd(arr[i], ans)));
+
+	return ans;
+}
+// [END] - Shamelessly 'borrowed' since i apparently can't have std::lcm
+
+unsigned long long Year23Day8Part2(const std::string& Filename)
+{
+	std::ifstream myfile;
+	myfile.open(Filename);
+
+	unsigned long long CurrentSum = 0;
+
+	std::string Instructions;
+	if (myfile.good())
+	{
+		char line[512];
+		myfile.getline(line, 512);
+		Instructions += line;
+
+		// Skip the space
+		myfile.getline(line, 512);
+	}
+
+	std::unordered_map<std::string, std::pair<std::string, std::string>> Network;
+	while (myfile.good())
+	{
+		char line[256];
+		myfile.getline(line, 256);
+		std::string Line(line);
+		AddCamelNode(Line, Network);
+	}
+
+	myfile.close();
+
+	std::vector<std::string> CurrKeys;
+	for (const auto& Entry : Network)
+	{
+		if (Entry.first[2] == 'A')
+		{
+			CurrKeys.push_back(Entry.first);
+		}
+	}
+
+	std::vector<int> MinPaths;
+	for (const auto& Key : CurrKeys)
+	{
+		MinPaths.push_back(RunCamelSimulation(Instructions, Network, Key, true));
+	}
+	CurrentSum = findlcm(MinPaths.data(), MinPaths.size());
+
+	return CurrentSum;
+}
+
+int Year23Day9Part1(const std::string& Filename)
 {
 	std::ifstream myfile;
 	myfile.open(Filename);
@@ -1242,7 +1412,7 @@ int Year23Day8Part1(const std::string& Filename)
 	return CurrentSum;
 }
 
-int Year23Day8Part2(const std::string& Filename)
+int Year23Day9Part2(const std::string& Filename)
 {
 	std::ifstream myfile;
 	myfile.open(Filename);
@@ -1319,22 +1489,23 @@ int main()
 	std::cout << "Day7Part2Sample: " << Year23Day7Part2( Day7Sample ) << std::endl;
 	std::cout << "Day7Part2: " << Year23Day7Part2( Day7Input ) << std::endl;
 
-	*/
 	std::string Day8Sample( "..\\Input\\Day8Sample.txt" );
+	std::string Day8Sample2( "..\\Input\\Day8Sample2.txt" );
 	std::string Day8Input("..\\Input\\Day8Input.txt" );
 	std::cout << "Day8Part1Sample: " << Year23Day8Part1( Day8Sample ) << std::endl;
 	std::cout << "Day8Part1: " << Year23Day8Part1( Day8Input ) << std::endl;
-	std::cout << "Day8Part2Sample: " << Year23Day8Part2( Day8Sample ) << std::endl;
+	std::cout << "Day8Part2Sample: " << Year23Day8Part2( Day8Sample2 ) << std::endl;
 	std::cout << "Day8Part2: " << Year23Day8Part2( Day8Input ) << std::endl;
 
-	/*
+	*/
 	std::string Day9Sample( "..\\Input\\Day9Sample.txt" );
 	std::string Day9Input("..\\Input\\Day9Input.txt" );
-	std::cout << "Day9Part1Sample: " << Year23Day9Part1( Day9Sample, true ) << std::endl;
+	std::cout << "Day9Part1Sample: " << Year23Day9Part1( Day9Sample ) << std::endl;
 	std::cout << "Day9Part1: " << Year23Day9Part1( Day9Input ) << std::endl;
-	std::cout << "Day9Part2Sample: " << Year23Day9Part2( Day9Sample, true ) << std::endl;
+	std::cout << "Day9Part2Sample: " << Year23Day9Part2( Day9Sample ) << std::endl;
 	std::cout << "Day9Part2: " << Year23Day9Part2( Day9Input ) << std::endl;
 
+	/*
 	std::string Day10Sample( "..\\Input\\Day10Sample.txt" );
 	std::string Day10Input("..\\Input\\Day10Input.txt" );
 	std::cout << "Day10Part1Sample: " << Year23Day10Part1( Day10Sample ) << std::endl;
