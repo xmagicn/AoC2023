@@ -1388,12 +1388,166 @@ unsigned long long Year23Day8Part2(const std::string& Filename)
 	{
 		MinPaths.push_back(RunCamelSimulation(Instructions, Network, Key, true));
 	}
-	CurrentSum = findlcm(MinPaths.data(), MinPaths.size());
+	CurrentSum = findlcm(MinPaths.data(), static_cast<int>(MinPaths.size()));
 
 	return CurrentSum;
 }
 
+struct SandInstabilitySensor
+{
+private:
+	std::vector<std::deque<int>> History;
+
+public:
+	void AddLine(const std::string& InLine)
+	{
+		std::deque<int> NewLine;
+		size_t Start = 0;
+		size_t End = InLine.find(' ');
+		while (End != std::string::npos)
+		{
+			std::string NextNum = InLine.substr(Start, End - Start);
+			NewLine.push_back(std::stoi(NextNum));
+
+			Start = End + 1;
+			End = InLine.find(' ', End + 1);
+		}
+		std::string NextNum = InLine.substr(Start, End - Start);
+		NewLine.push_back(std::stoi(NextNum));
+
+		History.push_back(NewLine);
+	}
+
+	bool IsLineAllZeros(const std::deque<int>& InLine) const
+	{
+		for (int Entry : InLine)
+		{
+			if (Entry != 0)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	int GetNextEntry()
+	{
+		int CurrIdx = 0;
+		if (History.size() == 1)
+		{
+			std::deque<int> NewLine;
+			do
+			{
+				std::deque<int>& CurrLine = History[CurrIdx];
+				for (int LineIdx = 1; LineIdx < CurrLine.size(); ++LineIdx)
+				{
+					NewLine.push_back(CurrLine[LineIdx] - CurrLine[LineIdx - 1]);
+				}
+
+				History.push_back(NewLine);
+				NewLine.clear();
+				++CurrIdx;
+			} while (!IsLineAllZeros(History[CurrIdx]));
+
+			History[CurrIdx].push_back(0);
+		}
+
+		CurrIdx = static_cast<int>(History.size()) - 1;
+		do
+		{
+			std::deque<int>& CurrLine = History[CurrIdx];
+			std::deque<int>& PrevLine = History[CurrIdx - 1];
+			int NewEntry = CurrLine[CurrLine.size() - 1] + PrevLine[PrevLine.size() - 1];
+			PrevLine.push_back(NewEntry);
+			--CurrIdx;
+		} while (CurrIdx > 0);
+	
+		return History[0][History[0].size() - 1];
+	}
+
+	int GetPrevEntry()
+	{
+		int CurrIdx = 0;
+		if (History.size() == 1)
+		{
+			std::deque<int> NewLine;
+			do
+			{
+				std::deque<int>& CurrLine = History[CurrIdx];
+				for (int LineIdx = 1; LineIdx < CurrLine.size(); ++LineIdx)
+				{
+					NewLine.push_back(CurrLine[LineIdx] - CurrLine[LineIdx - 1]);
+				}
+
+				History.push_back(NewLine);
+				NewLine.clear();
+				++CurrIdx;
+			} while (!IsLineAllZeros(History[CurrIdx]));
+
+			History[CurrIdx].push_front(0);
+		}
+
+		CurrIdx = static_cast<int>(History.size()) - 1;
+		do
+		{
+			std::deque<int>& CurrLine = History[CurrIdx];
+			std::deque<int>& PrevLine = History[CurrIdx - 1];
+			int NewEntry = PrevLine[0] - CurrLine[0];
+			PrevLine.push_front(NewEntry);
+			--CurrIdx;
+		} while (CurrIdx > 0);
+
+		return History[0][0];
+	}
+};
+
 int Year23Day9Part1(const std::string& Filename)
+{
+	std::ifstream myfile;
+	myfile.open(Filename);
+
+	int CurrentSum = 0;
+
+	while (myfile.good())
+	{
+		char line[256];
+		myfile.getline(line, 256);
+		std::string Line(line);
+
+		SandInstabilitySensor Sensor;
+		Sensor.AddLine(Line);
+		CurrentSum += Sensor.GetNextEntry();
+	}
+
+	myfile.close();
+
+	return CurrentSum;
+}
+
+int Year23Day9Part2(const std::string& Filename)
+{
+	std::ifstream myfile;
+	myfile.open(Filename);
+
+	int CurrentSum = 0;
+
+	while (myfile.good())
+	{
+		char line[256];
+		myfile.getline(line, 256);
+		std::string Line(line);
+
+		SandInstabilitySensor Sensor;
+		Sensor.AddLine(Line);
+		CurrentSum += Sensor.GetPrevEntry();
+	}
+
+	myfile.close();
+
+	return CurrentSum;
+}
+
+int Year23Day10Part1(const std::string& Filename)
 {
 	std::ifstream myfile;
 	myfile.open(Filename);
@@ -1412,7 +1566,7 @@ int Year23Day9Part1(const std::string& Filename)
 	return CurrentSum;
 }
 
-int Year23Day9Part2(const std::string& Filename)
+int Year23Day10Part2(const std::string& Filename)
 {
 	std::ifstream myfile;
 	myfile.open(Filename);
@@ -1497,7 +1651,6 @@ int main()
 	std::cout << "Day8Part2Sample: " << Year23Day8Part2( Day8Sample2 ) << std::endl;
 	std::cout << "Day8Part2: " << Year23Day8Part2( Day8Input ) << std::endl;
 
-	*/
 	std::string Day9Sample( "..\\Input\\Day9Sample.txt" );
 	std::string Day9Input("..\\Input\\Day9Input.txt" );
 	std::cout << "Day9Part1Sample: " << Year23Day9Part1( Day9Sample ) << std::endl;
@@ -1505,7 +1658,7 @@ int main()
 	std::cout << "Day9Part2Sample: " << Year23Day9Part2( Day9Sample ) << std::endl;
 	std::cout << "Day9Part2: " << Year23Day9Part2( Day9Input ) << std::endl;
 
-	/*
+	*/
 	std::string Day10Sample( "..\\Input\\Day10Sample.txt" );
 	std::string Day10Input("..\\Input\\Day10Input.txt" );
 	std::cout << "Day10Part1Sample: " << Year23Day10Part1( Day10Sample ) << std::endl;
@@ -1513,6 +1666,7 @@ int main()
 	std::cout << "Day10Part2Sample: " << Year23Day10Part2( Day10Sample ) << std::endl;
 	std::cout << "Day10Part2: " << Year23Day10Part2( Day10Input ) << std::endl;
 
+	/*
 	std::string Day11Sample( "..\\Input\\Day11Sample.txt" );
 	std::string Day11Input("..\\Input\\Day11Input.txt" );
 	std::cout << "Day11Part1Sample: " << Year23Day11Part1( Day11Sample ) << std::endl;
