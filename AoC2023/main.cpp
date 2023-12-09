@@ -592,7 +592,7 @@ void ReadNumbersIntoArray(const std::string& Numbers, std::vector<int>& OutNumbe
 		Temp.clear();
 	}
 }
-void ReadNumbersIntoArray(const std::string& Numbers, std::vector<unsigned long>& OutNumbers)
+void ReadNumbersIntoArray(const std::string& Numbers, std::vector<long long>& OutNumbers)
 {
 	std::string Temp;
 	for (const auto& Char : Numbers)
@@ -732,16 +732,16 @@ enum AlmanacMapTypes
 struct Almanac
 {
 private:
-	std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>> SeedToSoilMap;
-	std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>> SoilToFertilizerMap;
-	std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>> FertilizerToWaterMap;
-	std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>> WaterToLightMap;
-	std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>> LightToTempMap;
-	std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>> TempToHumidityMap;
-	std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>> HumidityToLocMap;
+	std::unordered_map<long long, std::pair<long long, long long>> SeedToSoilMap;
+	std::unordered_map<long long, std::pair<long long, long long>> SoilToFertilizerMap;
+	std::unordered_map<long long, std::pair<long long, long long>> FertilizerToWaterMap;
+	std::unordered_map<long long, std::pair<long long, long long>> WaterToLightMap;
+	std::unordered_map<long long, std::pair<long long, long long>> LightToTempMap;
+	std::unordered_map<long long, std::pair<long long, long long>> TempToHumidityMap;
+	std::unordered_map<long long, std::pair<long long, long long>> HumidityToLocMap;
 
 public:
-	std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>>& GetMap(AlmanacMapTypes MapType)
+	std::unordered_map<long long, std::pair<long long, long long>>& GetMap(AlmanacMapTypes MapType)
 	{
 		switch (MapType)
 		{
@@ -766,15 +766,15 @@ public:
 	}
 
 private:
-	void LoadMapEntry(std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>>& Map, unsigned long Key, unsigned long RangeMin, unsigned long RangeMax)
+	void LoadMapEntry(std::unordered_map<long long, std::pair<long long, long long>>& Map, long long Key, long long RangeMin, long long RangeMax)
 	{
-		Map[Key] = std::pair<unsigned long, unsigned long>(RangeMin, RangeMax);
+		Map[Key] = std::pair<long long, long long>(RangeMin, RangeMax);
 	}
-	void LoadMapEntry(std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>>& Map, const std::string& InLine)
+	void LoadMapEntry(std::unordered_map<long long, std::pair<long long, long long>>& Map, const std::string& InLine)
 	{
 		std::string Temp;
 		int ValIdx = 0;
-		unsigned long Vals[3] = { 0, 0, 0 };
+		long long Vals[3] = { 0, 0, 0 };
 
 		for (char Entry : InLine)
 		{
@@ -801,18 +801,18 @@ private:
 			Vals[ValIdx] = stoi(Temp);
 		}
 
-		Map[Vals[1]] = std::pair<unsigned long, unsigned long>(Vals[0], Vals[2]);
+		Map[Vals[1]] = std::pair<long long, long long>(Vals[0], Vals[2]);
 	}
 
-	unsigned long TransformId(AlmanacMapTypes MapType, unsigned long InId)
+	long long TransformId(AlmanacMapTypes MapType, long long InId)
 	{
-		std::unordered_map<unsigned long, std::pair<unsigned long, unsigned long>>& CurrMap = GetMap(MapType);
+		std::unordered_map<long long, std::pair<long long, long long>>& CurrMap = GetMap(MapType);
 
-		unsigned long Offset = 0;
+		long long Offset = 0;
 		for (const auto& It : CurrMap)
 		{
-			unsigned long RangeStart = It.first;
-			unsigned long RangeEnd = It.first + It.second.second;
+			long long RangeStart = It.first;
+			long long RangeEnd = It.first + It.second.second;
 			if (InId >= RangeStart && InId < RangeEnd)
 			{
 				Offset = It.second.first - RangeStart;
@@ -874,9 +874,9 @@ public:
 		myfile.close();
 	}
 
-	unsigned long GetSoilLocationForSeed(unsigned long InSeed)
+	long long GetSoilLocationForSeed(long long InSeed)
 	{
-		unsigned long WorkingId = InSeed;
+		long long WorkingId = InSeed;
 		for (int MapIdx = 0; MapIdx < static_cast<int>(AlmanacMapTypes::Count); ++MapIdx)
 		{
 			WorkingId = TransformId(static_cast<AlmanacMapTypes>(MapIdx), WorkingId);
@@ -885,15 +885,15 @@ public:
 	}
 };
 
-unsigned long Year23Day5Part1(const std::string& Filename)
+long long Year23Day5Part1(const std::string& Filename)
 {
-	unsigned long CurrentSum = ULONG_MAX;
+	long long CurrentSum = ULONG_MAX;
 
 	Almanac Records;
 	Records.LoadAlmanac(Filename);
 
 	// Get the Seeds
-	std::vector<unsigned long> Seeds;
+	std::vector<long long> Seeds;
 	std::ifstream myfile;
 
 	myfile.open(Filename);
@@ -908,7 +908,7 @@ unsigned long Year23Day5Part1(const std::string& Filename)
 
 	ReadNumbersIntoArray(Line, Seeds);
 
-	for (unsigned long Seed : Seeds)
+	for (long long Seed : Seeds)
 	{
 		CurrentSum = std::min(CurrentSum, Records.GetSoilLocationForSeed(Seed));
 	}
@@ -1619,7 +1619,7 @@ int main()
 	std::cout << "Day4Part1: " << Year23Day4Part1( Day4Input ) << std::endl;
 	std::cout << "Day4Part2Sample: " << Year23Day4Part2( Day4Sample ) << std::endl;
 	std::cout << "Day4Part2: " << Year23Day4Part2( Day4Input ) << std::endl;
-	* /
+	*/
 	std::string Day5Sample( "..\\Input\\Day5Sample.txt" );
 	std::string Day5Input("..\\Input\\Day5Input.txt" );
 	std::cout << "Day5Part1Sample: " << Year23Day5Part1( Day5Sample ) << std::endl;
