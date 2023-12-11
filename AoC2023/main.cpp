@@ -1619,6 +1619,22 @@ int Year23Day9Part2(const std::string& Filename)
 	return CurrentSum;
 }
 
+// [START] Lovingly borrowed from https://stackoverflow.com/questions/32685540/why-cant-i-compile-an-unordered-map-with-a-pair-as-key
+struct PairHash
+{
+	template <class T1, class T2>
+	std::size_t operator () (const std::pair<T1, T2>& p) const {
+		auto h1 = std::hash<T1>{}(p.first);
+		auto h2 = std::hash<T2>{}(p.second);
+
+		// Mainly for demonstration purposes, i.e. works but is overly simple
+		// In the real world, use sth. like boost.hash_combine
+		// Yes I saw this comment, yes i ignored it
+		return h1 ^ h2;
+	}
+};
+// [END]
+
 struct PipeMap
 {
 private:
@@ -1724,22 +1740,6 @@ public:
 			}
 		}
 	}
-	
-	// [START] Lovingly borrowed from https://stackoverflow.com/questions/32685540/why-cant-i-compile-an-unordered-map-with-a-pair-as-key
-	struct PipeHash
-	{
-		template <class T1, class T2>
-		std::size_t operator () (const std::pair<T1, T2>& p) const {
-			auto h1 = std::hash<T1>{}(p.first);
-			auto h2 = std::hash<T2>{}(p.second);
-
-			// Mainly for demonstration purposes, i.e. works but is overly simple
-			// In the real world, use sth. like boost.hash_combine
-			// Yes I saw this comment, yes i ignored it
-			return h1 ^ h2;
-		}
-	};
-	// [END]
 
 	int FindLoopLength(int RowStart, int ColStart) const
 	{
@@ -1858,6 +1858,171 @@ int Year23Day10Part2(const std::string& Filename)
 	return CurrentSum;
 }
 
+int Get2DVecLengthSq(const std::pair<int, int>& A, const std::pair<int, int>& B)
+{
+	return std::pow(B.first - A.first, 2) + std::pow(B.second - A.second, 2);
+}
+
+int Get2DVecLength(const std::pair<int, int>& A, const std::pair<int, int>& B)
+{
+	return std::sqrt(Get2DVecLengthSq(A, B));
+}
+
+struct GalaxyImage
+{
+private:
+	std::vector<std::vector<char>> Data;
+	std::vector<std::pair<int, int>> GalaxyLocations;
+
+	void AddLine(const std::string& InLine)
+	{
+		std::vector<char> NewLine;
+		bool bFoundGalaxy = false;
+		for (char Entry : InLine)
+		{
+			NewLine.push_back(Entry);
+			if (Entry == '#')
+			{
+				bFoundGalaxy = true;
+			}
+		}
+
+		if (NewLine.size() > 0)
+		{
+			Data.push_back(NewLine);
+			if (!bFoundGalaxy)
+			{
+				Data.push_back(NewLine);
+			}
+		}
+	}
+
+	void FindGalaxies()
+	{
+		for (int RowIdx = 0; RowIdx < Data.size(); ++RowIdx)
+		{
+			for (int ColIdx = 0; ColIdx < Data[RowIdx].size(); ++ColIdx)
+			{
+				if (Data[RowIdx][ColIdx] == '#')
+				{
+					GalaxyLocations.push_back({ RowIdx, ColIdx });
+				}
+			}
+		}
+	}
+
+	void FinishLoad()
+	{
+		for (int ColIdx = 0; ColIdx < Data[0].size(); ColIdx++)
+		{
+			bool bFoundGalaxy = false;
+			for (int RowIdx = 0; RowIdx < Data.size(); RowIdx++)
+			{
+				if (Data[RowIdx][ColIdx] == '#')
+				{
+					bFoundGalaxy = true;
+					break;
+				}
+			}
+
+			if (!bFoundGalaxy)
+			{
+				for (int RowIdx = 0; RowIdx < Data.size(); RowIdx++)
+				{
+					Data[RowIdx].insert(Data[RowIdx].begin() + ColIdx, '.');
+				}
+				++ColIdx;
+			}
+		}
+
+		FindGalaxies();
+	}
+
+public:
+	const std::vector<std::pair<int, int>>& GetGalaxyLocations() const
+	{
+		return GalaxyLocations;
+	}
+
+	void Print() const
+	{
+		for (int RowIdx = 0; RowIdx < Data.size(); ++RowIdx)
+		{
+			for (int ColIdx = 0; ColIdx < Data[RowIdx].size(); ++ColIdx)
+			{
+				std::cout << Data[RowIdx][ColIdx] << ' ';
+			}
+			std::cout << std::endl;
+		}
+	}
+
+	void LoadFromFile(const std::string& Filename, int SpaceSize = 1)
+	{
+		std::ifstream myfile;
+		myfile.open(Filename);
+
+		while (myfile.good())
+		{
+			char line[256];
+			myfile.getline(line, 256);
+			std::string Line(line);
+
+			AddLine(Line);
+		}
+
+		FinishLoad();
+
+		myfile.close();
+	}
+};
+
+int Year23Day11Part1(const std::string& Filename)
+{
+	GalaxyImage Image;
+	Image.LoadFromFile(Filename);
+	//Image.Print();
+
+	int CurrentSum = 0;
+	const std::vector<std::pair<int, int>>& GalaxyLocs = Image.GetGalaxyLocations();
+	for (int RowCt = 0; RowCt < GalaxyLocs.size() - 1; ++RowCt)
+	{
+		const auto& GalaxyA = GalaxyLocs[RowCt];
+
+		for (int ColCt = RowCt + 1; ColCt < GalaxyLocs.size(); ++ColCt)
+		{
+			const auto& GalaxyB = GalaxyLocs[ColCt];
+			if (GalaxyA != GalaxyB)
+			{	
+				int ClosestResult = std::abs(GalaxyA.first - GalaxyB.first) + std::abs(GalaxyA.second - GalaxyB.second);
+				//std::cout << "[" << RowCt << ", " << ColCt << "]: " << ClosestResult << std::endl;
+				CurrentSum += ClosestResult;
+			}
+
+		}
+	}
+
+	return CurrentSum;
+}
+
+int Year23Day11Part2(const std::string& Filename)
+{
+	std::ifstream myfile;
+	myfile.open(Filename);
+
+	int CurrentSum = 0;
+
+	while (myfile.good())
+	{
+		char line[256];
+		myfile.getline(line, 256);
+		std::string Line(line);
+	}
+
+	myfile.close();
+
+	return CurrentSum;
+}
+
 int main()
 {
 	/*
@@ -1930,7 +2095,6 @@ int main()
 	std::cout << "Day9Part2Sample: " << Year23Day9Part2( Day9Sample ) << std::endl;
 	std::cout << "Day9Part2: " << Year23Day9Part2( Day9Input ) << std::endl;
 
-	*/
 	std::string Day10Sample( "..\\Input\\Day10Sample.txt" );
 	std::string Day10Sample2( "..\\Input\\Day10Sample2.txt" );
 	std::string Day10Input("..\\Input\\Day10Input.txt" );
@@ -1941,7 +2105,7 @@ int main()
 	std::cout << "Day10Part2Sample2: " << Year23Day10Part2( Day10Sample2 ) << std::endl;
 	std::cout << "Day10Part2: " << Year23Day10Part2( Day10Input ) << std::endl;
 
-	/*
+	*/
 	std::string Day11Sample( "..\\Input\\Day11Sample.txt" );
 	std::string Day11Input("..\\Input\\Day11Input.txt" );
 	std::cout << "Day11Part1Sample: " << Year23Day11Part1( Day11Sample ) << std::endl;
@@ -1949,6 +2113,7 @@ int main()
 	std::cout << "Day11Part2Sample: " << Year23Day11Part2( Day11Sample ) << std::endl;
 	std::cout << "Day11Part2: " << Year23Day11Part2( Day11Input ) << std::endl;
 
+	/*
 	std::string Day12Sample( "..\\Input\\Day12Sample.txt" );
 	std::string Day12Input("..\\Input\\Day12Input.txt" );
 	std::cout << "Day12Part1Sample: " << Year23Day12Part1( Day12Sample, true ) << std::endl;
