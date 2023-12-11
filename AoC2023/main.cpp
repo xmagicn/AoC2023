@@ -1858,21 +1858,14 @@ int Year23Day10Part2(const std::string& Filename)
 	return CurrentSum;
 }
 
-int Get2DVecLengthSq(const std::pair<int, int>& A, const std::pair<int, int>& B)
-{
-	return std::pow(B.first - A.first, 2) + std::pow(B.second - A.second, 2);
-}
-
-int Get2DVecLength(const std::pair<int, int>& A, const std::pair<int, int>& B)
-{
-	return std::sqrt(Get2DVecLengthSq(A, B));
-}
-
 struct GalaxyImage
 {
 private:
 	std::vector<std::vector<char>> Data;
-	std::vector<std::pair<int, int>> GalaxyLocations;
+	std::vector<std::pair<long long, long long>> GalaxyLocations;
+	std::vector<long long> ExpandedRows;
+	std::vector<long long> ExpandedCols;
+	long long ExpansionValue;
 
 	void AddLine(const std::string& InLine)
 	{
@@ -1892,7 +1885,8 @@ private:
 			Data.push_back(NewLine);
 			if (!bFoundGalaxy)
 			{
-				Data.push_back(NewLine);
+				ExpandedRows.push_back(Data.size() - 1);
+				//Data.push_back(NewLine);
 			}
 		}
 	}
@@ -1927,19 +1921,38 @@ private:
 
 			if (!bFoundGalaxy)
 			{
-				for (int RowIdx = 0; RowIdx < Data.size(); RowIdx++)
-				{
-					Data[RowIdx].insert(Data[RowIdx].begin() + ColIdx, '.');
-				}
-				++ColIdx;
+				ExpandedCols.push_back(ColIdx);
 			}
 		}
 
 		FindGalaxies();
 	}
 
+	std::pair<long long, long long> AdjustLocation(const std::pair<long long, long long>& InLoc) const
+	{
+		std::pair<long long, long long> OutLoc = InLoc;
+
+		for (long long Row : ExpandedRows)
+		{
+			if (Row < InLoc.first)
+			{
+				OutLoc.first += ExpansionValue - 1;
+			}
+		}
+
+		for (long long Col : ExpandedCols)
+		{
+			if (Col < InLoc.second)
+			{
+				OutLoc.second += ExpansionValue - 1;
+			}
+		}
+		
+		return OutLoc;
+	}
+
 public:
-	const std::vector<std::pair<int, int>>& GetGalaxyLocations() const
+	const std::vector<std::pair<long long, long long>>& GetGalaxyLocations() const
 	{
 		return GalaxyLocations;
 	}
@@ -1956,8 +1969,10 @@ public:
 		}
 	}
 
-	void LoadFromFile(const std::string& Filename, int SpaceSize = 1)
+	void LoadFromFile(const std::string& Filename, long long SpaceSize = 2)
 	{
+		ExpansionValue = SpaceSize;
+
 		std::ifstream myfile;
 		myfile.open(Filename);
 
@@ -1974,16 +1989,24 @@ public:
 
 		myfile.close();
 	}
+
+	long long GetGalaxyDistance(const std::pair<long long, long long>& GalaxyA, const std::pair<long long, long long>& GalaxyB) const
+	{
+		std::pair<long long, long long> AdjustedA = AdjustLocation(GalaxyA);
+		std::pair<long long, long long> AdjustedB = AdjustLocation(GalaxyB);
+
+		return std::abs(AdjustedA.first - AdjustedB.first) + std::abs(AdjustedA.second - AdjustedB.second);
+	}
 };
 
-int Year23Day11Part1(const std::string& Filename)
+long long Year23Day11Part1(const std::string& Filename)
 {
 	GalaxyImage Image;
 	Image.LoadFromFile(Filename);
 	//Image.Print();
 
-	int CurrentSum = 0;
-	const std::vector<std::pair<int, int>>& GalaxyLocs = Image.GetGalaxyLocations();
+	long long CurrentSum = 0;
+	const std::vector<std::pair<long long, long long>>& GalaxyLocs = Image.GetGalaxyLocations();
 	for (int RowCt = 0; RowCt < GalaxyLocs.size() - 1; ++RowCt)
 	{
 		const auto& GalaxyA = GalaxyLocs[RowCt];
@@ -1993,8 +2016,8 @@ int Year23Day11Part1(const std::string& Filename)
 			const auto& GalaxyB = GalaxyLocs[ColCt];
 			if (GalaxyA != GalaxyB)
 			{	
-				int ClosestResult = std::abs(GalaxyA.first - GalaxyB.first) + std::abs(GalaxyA.second - GalaxyB.second);
-				//std::cout << "[" << RowCt << ", " << ColCt << "]: " << ClosestResult << std::endl;
+				long long ClosestResult = Image.GetGalaxyDistance(GalaxyA, GalaxyB);
+				//std::cout << "[" << RowCt + 1 << ", " << ColCt + 1 << "]: " << ClosestResult << std::endl;
 				CurrentSum += ClosestResult;
 			}
 
@@ -2004,7 +2027,53 @@ int Year23Day11Part1(const std::string& Filename)
 	return CurrentSum;
 }
 
-int Year23Day11Part2(const std::string& Filename)
+long long Year23Day11Part2(const std::string& Filename)
+{
+	GalaxyImage Image;
+	Image.LoadFromFile(Filename, 1000000);
+
+	long long CurrentSum = 0;
+	const std::vector<std::pair<long long, long long>>& GalaxyLocs = Image.GetGalaxyLocations();
+	for (int RowCt = 0; RowCt < GalaxyLocs.size() - 1; ++RowCt)
+	{
+		const auto& GalaxyA = GalaxyLocs[RowCt];
+
+		for (int ColCt = RowCt + 1; ColCt < GalaxyLocs.size(); ++ColCt)
+		{
+			const auto& GalaxyB = GalaxyLocs[ColCt];
+			if (GalaxyA != GalaxyB)
+			{
+				long long ClosestResult = Image.GetGalaxyDistance(GalaxyA, GalaxyB);
+				//std::cout << "[" << RowCt + 1 << ", " << ColCt + 1 << "]: " << ClosestResult << std::endl;
+				CurrentSum += ClosestResult;
+			}
+
+		}
+	}
+
+	return CurrentSum;
+}
+
+int Year23Day12Part1(const std::string& Filename)
+{
+	std::ifstream myfile;
+	myfile.open(Filename);
+
+	int CurrentSum = 0;
+
+	while (myfile.good())
+	{
+		char line[256];
+		myfile.getline(line, 256);
+		std::string Line(line);
+	}
+
+	myfile.close();
+
+	return CurrentSum;
+}
+
+int Year23Day12Part2(const std::string& Filename)
 {
 	std::ifstream myfile;
 	myfile.open(Filename);
