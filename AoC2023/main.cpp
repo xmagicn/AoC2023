@@ -1619,21 +1619,204 @@ int Year23Day9Part2(const std::string& Filename)
 	return CurrentSum;
 }
 
+struct PipeMap
+{
+private:
+	std::vector<std::vector<char>> Data;
+
+	enum class Directions
+	{
+		N,
+		E,
+		S,
+		W
+	};
+
+public:
+	void Print() const
+	{
+		for (int RowIdx = 0; RowIdx < Data.size(); ++RowIdx)
+		{
+			for (int ColIdx = 0; ColIdx < Data[RowIdx].size(); ++ColIdx)
+			{
+				std::cout << Data[RowIdx][ColIdx] << ' ';
+			}
+			std::cout << std::endl;
+		}
+	}
+
+	void AddRow(const std::string& InRow)
+	{
+		std::vector<char> NewRow;
+		for (char Entry : InRow)
+		{
+			NewRow.push_back(Entry);
+		}
+		Data.push_back(NewRow);
+	}
+
+	bool FindStart(int& OutRow, int& OutCol) const
+	{
+		for (int RowIdx = 0; RowIdx < Data.size(); ++RowIdx)
+		{
+			for (int ColIdx = 0; ColIdx < Data[RowIdx].size(); ++ColIdx)
+			{
+				if (Data[RowIdx][ColIdx] == 'S')
+				{
+					OutRow = RowIdx;
+					OutCol = ColIdx;
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	bool IsPipeValid(const std::pair<int, int>& InPos) const
+	{
+		return InPos.first >= 0
+			&& InPos.first < Data.size()
+			&& InPos.second >= 0
+			&& InPos.second < Data[0].size();
+	}
+	char GetPipe(const std::pair<int, int>& InPos) const { return IsPipeValid(InPos) ? Data[InPos.first][InPos.second] : ' '; }
+
+	void AppendStartAdjacencies(const std::pair<int, int>& StartPos, std::vector<std::pair<int, int>>& NewPositions) const
+	{
+		std::pair<int, int> North({StartPos.first + 1, StartPos.second });
+		std::pair<int, int> East({ StartPos.first, StartPos.second + 1 });
+		std::pair<int, int> South({ StartPos.first - 1, StartPos.second });
+		std::pair<int, int> West({ StartPos.first, StartPos.second - 1 });
+
+		if (IsPipeValid(North))
+		{
+			char NorthPipe = GetPipe(North);
+			if (NorthPipe == '|' || NorthPipe == '7' || NorthPipe == 'F')
+			{
+				NewPositions.push_back(North);
+			}
+		}
+
+		if (IsPipeValid(East))
+		{
+			char EastPipe = GetPipe(East);
+			if (EastPipe == '-' || EastPipe == '7' || EastPipe == 'J')
+			{
+				NewPositions.push_back(East);
+			}
+		}
+
+		if (IsPipeValid(South))
+		{
+			char SouthPipe = GetPipe(South);
+			if (SouthPipe == '|' || SouthPipe == 'L' || SouthPipe == 'J')
+			{
+				NewPositions.push_back(South);
+			}
+		}
+
+		if (IsPipeValid(West))
+		{
+			char WestPipe = GetPipe(West);
+			if (WestPipe == '-' || WestPipe == 'F' || WestPipe == 'L')
+			{
+				NewPositions.push_back(West);
+			}
+		}
+	}
+
+	int FindLoopLength(int RowStart, int ColStart) const
+	{
+		PipeMap DebugMap = *this;
+
+		std::stack<std::pair<int, int>> Stack;
+		Stack.push({ RowStart, ColStart });
+
+		std::set<std::pair<int, int>> VisitedPositions;
+		VisitedPositions.insert({ RowStart, ColStart });
+
+		std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> FinalMapping;
+
+		while (Stack.size())
+		{
+			std::pair<int, int> CurrPos = Stack.top();
+			Stack.pop();
+			VisitedPositions.insert(CurrPos);
+
+			char CurrPipe = GetPipe(CurrPos);
+
+			std::vector<std::pair<int, int>> NewPositions;
+			switch (CurrPipe)
+			{
+			case '-':
+				NewPositions.push_back({ CurrPos.first, CurrPos.second + 1 });
+				NewPositions.push_back({ CurrPos.first, CurrPos.second - 1 });
+				break;
+			case '|':
+				NewPositions.push_back({ CurrPos.first + 1, CurrPos.second });
+				NewPositions.push_back({ CurrPos.first - 1, CurrPos.second });
+				break;
+			case '7':
+				NewPositions.push_back({ CurrPos.first, CurrPos.second - 1 });
+				NewPositions.push_back({ CurrPos.first + 1, CurrPos.second });
+				break;
+			case 'F':
+				NewPositions.push_back({ CurrPos.first + 1, CurrPos.second });
+				NewPositions.push_back({ CurrPos.first, CurrPos.second + 1 });
+				break;
+			case 'L':
+				NewPositions.push_back({ CurrPos.first - 1, CurrPos.second });
+				NewPositions.push_back({ CurrPos.first, CurrPos.second + 1 });
+				break;
+			case 'J':
+				NewPositions.push_back({ CurrPos.first - 1, CurrPos.second });
+				NewPositions.push_back({ CurrPos.first, CurrPos.second - 1 });
+				break;
+			case 'S':
+				AppendStartAdjacencies(CurrPos, NewPositions);
+				break;
+			default:
+				break;
+			}
+
+			for (const auto& Pos : NewPositions)
+			{
+				if (0 == VisitedPositions.count(Pos))
+				{
+					Stack.push(Pos);
+					FinalMapping.push_back({ Pos, CurrPos });
+				}
+			}
+		}
+		return FinalMapping.size() / 2;
+	}
+};
+
 int Year23Day10Part1(const std::string& Filename)
 {
 	std::ifstream myfile;
 	myfile.open(Filename);
 
 	int CurrentSum = 0;
+	PipeMap Map;
 
 	while (myfile.good())
 	{
 		char line[256];
 		myfile.getline(line, 256);
 		std::string Line(line);
+		Map.AddRow(Line);
 	}
 
 	myfile.close();
+
+	//Map.Print();
+
+	int StartRow, StartCol;
+	if (Map.FindStart(StartRow, StartCol))
+	{
+		CurrentSum = Map.FindLoopLength(StartRow, StartCol);
+	}
 
 	return CurrentSum;
 }
@@ -1691,14 +1874,13 @@ int main()
 	std::cout << "Day4Part1: " << Year23Day4Part1( Day4Input ) << std::endl;
 	std::cout << "Day4Part2Sample: " << Year23Day4Part2( Day4Sample ) << std::endl;
 	std::cout << "Day4Part2: " << Year23Day4Part2( Day4Input ) << std::endl;
-	*/
+
 	std::string Day5Sample( "..\\Input\\Day5Sample.txt" );
 	std::string Day5Input("..\\Input\\Day5Input.txt" );
 	std::cout << "Day5Part1Sample: " << Year23Day5Part1( Day5Sample ) << std::endl;
 	std::cout << "Day5Part1: " << Year23Day5Part1( Day5Input ) << std::endl;
 	std::cout << "Day5Part2Sample: " << Year23Day5Part2( Day5Sample ) << std::endl;
 	std::cout << "Day5Part2: " << Year23Day5Part2( Day5Input ) << std::endl;
-	/*
 
 	std::unordered_map<long, long> Day6Sample{ {7, 9}, {15, 40}, {30, 200} };
 	std::unordered_map<long, long> Day6Input{ {48, 296}, {93, 1928}, {85, 1236}, {95, 1391} };
@@ -1732,11 +1914,14 @@ int main()
 
 	*/
 	std::string Day10Sample( "..\\Input\\Day10Sample.txt" );
+	std::string Day10Sample2( "..\\Input\\Day10Sample2.txt" );
 	std::string Day10Input("..\\Input\\Day10Input.txt" );
 	std::cout << "Day10Part1Sample: " << Year23Day10Part1( Day10Sample ) << std::endl;
+	std::cout << "Day10Part1Sample2: " << Year23Day10Part1( Day10Sample2 ) << std::endl;
 	std::cout << "Day10Part1: " << Year23Day10Part1( Day10Input ) << std::endl;
-	std::cout << "Day10Part2Sample: " << Year23Day10Part2( Day10Sample ) << std::endl;
-	std::cout << "Day10Part2: " << Year23Day10Part2( Day10Input ) << std::endl;
+	//std::cout << "Day10Part2Sample: " << Year23Day10Part2( Day10Sample ) << std::endl;
+	//std::cout << "Day10Part2Sample2: " << Year23Day10Part2( Day10Sample2 ) << std::endl;
+	//std::cout << "Day10Part2: " << Year23Day10Part2( Day10Input ) << std::endl;
 
 	/*
 	std::string Day11Sample( "..\\Input\\Day11Sample.txt" );
