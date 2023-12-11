@@ -1724,6 +1724,22 @@ public:
 			}
 		}
 	}
+	
+	// [START] Lovingly borrowed from https://stackoverflow.com/questions/32685540/why-cant-i-compile-an-unordered-map-with-a-pair-as-key
+	struct PipeHash
+	{
+		template <class T1, class T2>
+		std::size_t operator () (const std::pair<T1, T2>& p) const {
+			auto h1 = std::hash<T1>{}(p.first);
+			auto h2 = std::hash<T2>{}(p.second);
+
+			// Mainly for demonstration purposes, i.e. works but is overly simple
+			// In the real world, use sth. like boost.hash_combine
+			// Yes I saw this comment, yes i ignored it
+			return h1 ^ h2;
+		}
+	};
+	// [END]
 
 	int FindLoopLength(int RowStart, int ColStart) const
 	{
@@ -1736,6 +1752,7 @@ public:
 		VisitedPositions.insert({ RowStart, ColStart });
 
 		std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> FinalMapping;
+		//std::unordered_map<std::pair<std::pair<int, int>, std::pair<int, int>>, PipeHash> FinalMapping;
 
 		while (Stack.size())
 		{
@@ -1785,10 +1802,11 @@ public:
 				{
 					Stack.push(Pos);
 					FinalMapping.push_back({ Pos, CurrPos });
+					//FinalMapping.insert(Pos, CurrPos);
 				}
 			}
 		}
-		return FinalMapping.size() / 2;
+		return static_cast<int>(FinalMapping.size()) / 2;
 	}
 };
 
@@ -1919,9 +1937,9 @@ int main()
 	std::cout << "Day10Part1Sample: " << Year23Day10Part1( Day10Sample ) << std::endl;
 	std::cout << "Day10Part1Sample2: " << Year23Day10Part1( Day10Sample2 ) << std::endl;
 	std::cout << "Day10Part1: " << Year23Day10Part1( Day10Input ) << std::endl;
-	//std::cout << "Day10Part2Sample: " << Year23Day10Part2( Day10Sample ) << std::endl;
-	//std::cout << "Day10Part2Sample2: " << Year23Day10Part2( Day10Sample2 ) << std::endl;
-	//std::cout << "Day10Part2: " << Year23Day10Part2( Day10Input ) << std::endl;
+	std::cout << "Day10Part2Sample: " << Year23Day10Part2( Day10Sample ) << std::endl;
+	std::cout << "Day10Part2Sample2: " << Year23Day10Part2( Day10Sample2 ) << std::endl;
+	std::cout << "Day10Part2: " << Year23Day10Part2( Day10Input ) << std::endl;
 
 	/*
 	std::string Day11Sample( "..\\Input\\Day11Sample.txt" );
