@@ -1815,7 +1815,44 @@ public:
 		std::queue<std::pair<int, int>> Queue;
 		Queue.push(StartPos);
 
-
+		bool bInBoundary = true;
+		while (!Queue.empty())
+		{
+			std::pair<int, int>& CurrPos = Queue.front();
+			Queue.pop();
+			
+			OutPoints.push_back(CurrPos);
+			
+			std::vector<std::pair<int, int>> Potentials = (
+				{CurrPos.first + 1, CurrPos.second}, 
+				{CurrPos.first, 	CurrPos.second + 1}, 
+				{CurrPos.first - 1, CurrPos.second}, 
+				{CurrPos.first, 	CurrPos.second - 1}
+			);
+			
+			for (const auto& Potential : Potentials)
+			{
+				if (OutPoints.count(Potential) != 0)
+				{
+					continue;
+				}
+				
+				if (Boundary.count(Potential) != 0)
+				{
+					continue;
+				}
+				
+				if (!IsPipeValid(Potential))
+				{
+					bInBoundary = false;
+					continue;
+				}
+				
+				Queue.push(Potential);
+			}
+		}
+		
+		return bInBoundary;
 	}
 
 	int CountInsideSpaces(const std::vector<std::pair<int, int>>& Path) const
@@ -1825,11 +1862,39 @@ public:
 
 		for (const auto& Entry : Path)
 		{
-			bool bInsideLoop = true;
-			std::vector<std::pair<int, int>> FloodedPoints;
+			std::vector<std::print<int, int>> EntryAdjacencies;
+			char PipeChar = GetPipe(Entry);
+			if (PipeChar == '|')
+			{
+				EntryAdjacencies.push_back({Entry.first, Entry.second - 1});
+				EntryAdjacencies.push_back({Entry.first, Entry.second + 1});
+			}
+			else if (PipeChar == '-')
+			{
+				EntryAdjacencies.push_back({Entry.first - 1, Entry.second});
+				EntryAdjacencies.push_back({Entry.first + 1, Entry.second});
+			}
+			
+			for (const auto& Adjacency : Adjacencies)
+			{
+				std::vector<std::pair<int, int>> FloodedPoints;
+				bool bInsideLoop = FloodFill(Adjacency, Path, FloodedPoints);
+				
+				if (FloodedPoints.size() > 0)
+				{
+					if (bInsideLoop)
+					{
+						InsidePoints.push_back(FloodedPoints);
+					}
+					else
+					{
+						OutsidePoints.push_back(FloodedPoints);
+					}
+				}
+			}
 		}
 
-		return 0;
+		return InsidePoints.size();
 	}
 };
 
