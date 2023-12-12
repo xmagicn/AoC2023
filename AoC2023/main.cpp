@@ -2176,6 +2176,42 @@ void ReadDay12Input(const std::string& InLine, std::vector<char>& OutSprings, st
 	} while (NextIdx != std::string::npos);
 }
 
+void ReadDay12Part2Input(const std::string& InLine, std::vector<char>& OutSprings, std::vector<int>& OutData)
+{
+	int SplitIdx = InLine.find(' ');
+	std::vector<char> BaseLine;
+	for (int Idx = 0; Idx < SplitIdx; ++Idx)
+	{
+		BaseLine.push_back(InLine[Idx]);
+	}
+	OutSprings.insert(OutSprings.end(), BaseLine.begin(), BaseLine.end());
+
+	// Unfold
+	constexpr int UNFOLD_COUNT = 5;
+	for (int Ct = 1; Ct < UNFOLD_COUNT; ++Ct)
+	{
+		OutSprings.push_back('?');
+		OutSprings.insert(OutSprings.end(), BaseLine.begin(), BaseLine.end());
+	}
+
+	int CurrIdx = SplitIdx + 1;
+	int NextIdx;
+	std::vector<int> BaseData;
+	do
+	{
+		NextIdx = InLine.find(',', CurrIdx);
+		std::string NextNum = InLine.substr(CurrIdx, NextIdx - CurrIdx);
+		BaseData.push_back(std::stoi(NextNum));
+		CurrIdx = NextIdx + 1;
+	} while (NextIdx != std::string::npos);
+
+	// Unfold
+	for (int Ct = 0; Ct < UNFOLD_COUNT; ++Ct)
+	{
+		OutData.insert(OutData.end(), BaseData.begin(), BaseData.end());
+	}
+}
+
 bool CanSpringFitAtIndex(const std::vector<char>& Springs, int Idx, int Len)
 {
 	// Make sure Idx + Len < Springs.size()
@@ -2205,7 +2241,7 @@ bool CanSpringFitAtIndex(const std::vector<char>& Springs, int Idx, int Len)
 
 	return bAllEntriesValid && bLeftValid && bRightValid;
 }
-
+static std::unordered_map<std::pair<int, int>, int, PairHash> SpringMemoizeMap;
 int CalculateCombinations(const std::vector<char>& Springs, int SpringStartIdx, const std::vector<std::pair<int, std::vector<std::pair<int, int>>>>& Data, int DataStartIdx)
 {
 	int ComboSum = 0;
@@ -2213,6 +2249,12 @@ int CalculateCombinations(const std::vector<char>& Springs, int SpringStartIdx, 
 	{
 		// Planet of the Base (Case)
 		return ComboSum;
+	}
+
+	std::pair<int, int> MapKey({ SpringStartIdx, DataStartIdx });
+	if (SpringMemoizeMap.count(MapKey) > 0)
+	{
+		return SpringMemoizeMap[MapKey];
 	}
 
 	// We can probably stop checking if we ever fail to increment
@@ -2256,6 +2298,7 @@ int CalculateCombinations(const std::vector<char>& Springs, int SpringStartIdx, 
 		}
 	}
 
+	SpringMemoizeMap[MapKey] = ComboSum;
 	return ComboSum;
 }
 
@@ -2279,6 +2322,7 @@ int EvaluateRowPossibilities(const std::vector<char>& Springs, const std::vector
 	}
 
 	// somehow, combine spots, all permutations
+	SpringMemoizeMap.clear();
 	return CalculateCombinations(Springs, 0, Possibilities, 0);
 }
 
@@ -2300,7 +2344,8 @@ int Year23Day12Part1(const std::string& Filename)
 		std::vector<int> Data;
 		ReadDay12Input(Line, Springs, Data);
 		int RowPossibilities = EvaluateRowPossibilities(Springs, Data);
-		//std::cout << Ct++ << ") " << RowPossibilities << ":\t" << Line << std::endl;
+		//std::cout << Ct << ") " << RowPossibilities << ":\t" << Line << std::endl;
+		++Ct;
 		CurrentSum += RowPossibilities;
 	}
 
@@ -2315,12 +2360,20 @@ int Year23Day12Part2(const std::string& Filename)
 	myfile.open(Filename);
 
 	int CurrentSum = 0;
+	int Ct = 1;
 
 	while (myfile.good())
 	{
 		char line[256];
 		myfile.getline(line, 256);
 		std::string Line(line);
+
+		std::vector<char> Springs;
+		std::vector<int> Data;
+		ReadDay12Part2Input(Line, Springs, Data);
+		int RowPossibilities = EvaluateRowPossibilities(Springs, Data);
+		std::cout << Ct++ << ") " << RowPossibilities << ":\t" << Line << std::endl;
+		CurrentSum += RowPossibilities;
 	}
 
 	myfile.close();
