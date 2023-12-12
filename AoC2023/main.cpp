@@ -1741,7 +1741,7 @@ public:
 		}
 	}
 
-	int FindLoopLength(int RowStart, int ColStart) const
+	int FindLoopLength(int RowStart, int ColStart, std::vector<std::pair<int, int>>& OutLoop) const
 	{
 		PipeMap DebugMap = *this;
 
@@ -1806,7 +1806,30 @@ public:
 				}
 			}
 		}
+
 		return static_cast<int>(FinalMapping.size()) / 2;
+	}
+
+	bool FloodFill(const std::pair<int, int>& StartPos, const std::vector<std::pair<int, int>>& Boundary, std::vector<std::pair<int, int>>& OutPoints)
+	{
+		std::queue<std::pair<int, int>> Queue;
+		Queue.push(StartPos);
+
+
+	}
+
+	int CountInsideSpaces(const std::vector<std::pair<int, int>>& Path) const
+	{
+		std::vector<std::pair<int, int>> InsidePoints;
+		std::vector<std::pair<int, int>> OutsidePoints;
+
+		for (const auto& Entry : Path)
+		{
+			bool bInsideLoop = true;
+			std::vector<std::pair<int, int>> FloodedPoints;
+		}
+
+		return 0;
 	}
 };
 
@@ -1833,7 +1856,8 @@ int Year23Day10Part1(const std::string& Filename)
 	int StartRow, StartCol;
 	if (Map.FindStart(StartRow, StartCol))
 	{
-		CurrentSum = Map.FindLoopLength(StartRow, StartCol);
+		std::vector<std::pair<int, int>> Path;
+		CurrentSum = Map.FindLoopLength(StartRow, StartCol, Path);
 	}
 
 	return CurrentSum;
@@ -1845,15 +1869,27 @@ int Year23Day10Part2(const std::string& Filename)
 	myfile.open(Filename);
 
 	int CurrentSum = 0;
+	PipeMap Map;
 
 	while (myfile.good())
 	{
 		char line[256];
 		myfile.getline(line, 256);
 		std::string Line(line);
+		Map.AddRow(Line);
 	}
 
 	myfile.close();
+
+	//Map.Print();
+
+	int StartRow, StartCol;
+	if (Map.FindStart(StartRow, StartCol))
+	{
+		std::vector<std::pair<int, int>> Loop;
+		Map.FindLoopLength(StartRow, StartCol, Loop);
+		CurrentSum = Map.CountInsideSpaces(Loop);
+	}
 
 	return CurrentSum;
 }
@@ -2163,6 +2199,7 @@ int main()
 	std::cout << "Day9Part1: " << Year23Day9Part1( Day9Input ) << std::endl;
 	std::cout << "Day9Part2Sample: " << Year23Day9Part2( Day9Sample ) << std::endl;
 	std::cout << "Day9Part2: " << Year23Day9Part2( Day9Input ) << std::endl;
+	*/
 
 	std::string Day10Sample( "..\\Input\\Day10Sample.txt" );
 	std::string Day10Sample2( "..\\Input\\Day10Sample2.txt" );
@@ -2174,7 +2211,6 @@ int main()
 	std::cout << "Day10Part2Sample2: " << Year23Day10Part2( Day10Sample2 ) << std::endl;
 	std::cout << "Day10Part2: " << Year23Day10Part2( Day10Input ) << std::endl;
 
-	*/
 	std::string Day11Sample( "..\\Input\\Day11Sample.txt" );
 	std::string Day11Input("..\\Input\\Day11Input.txt" );
 	std::cout << "Day11Part1Sample: " << Year23Day11Part1( Day11Sample ) << std::endl;
