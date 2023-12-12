@@ -1816,6 +1816,7 @@ public:
 		Queue.push(StartPos);
 
 		bool bInBoundary = true;
+		/*
 		while (!Queue.empty())
 		{
 			std::pair<int, int>& CurrPos = Queue.front();
@@ -1851,6 +1852,7 @@ public:
 				Queue.push(Potential);
 			}
 		}
+		//*/
 		
 		return bInBoundary;
 	}
@@ -1859,10 +1861,10 @@ public:
 	{
 		std::vector<std::pair<int, int>> InsidePoints;
 		std::vector<std::pair<int, int>> OutsidePoints;
-
+		/*
 		for (const auto& Entry : Path)
 		{
-			std::vector<std::print<int, int>> EntryAdjacencies;
+			std::vector<std::pair<int, int>> EntryAdjacencies;
 			char PipeChar = GetPipe(Entry);
 			if (PipeChar == '|')
 			{
@@ -1875,7 +1877,7 @@ public:
 				EntryAdjacencies.push_back({Entry.first + 1, Entry.second});
 			}
 			
-			for (const auto& Adjacency : Adjacencies)
+			for (const auto& Adjacency : EntryAdjacencies)
 			{
 				std::vector<std::pair<int, int>> FloodedPoints;
 				bool bInsideLoop = FloodFill(Adjacency, Path, FloodedPoints);
@@ -1893,8 +1895,8 @@ public:
 				}
 			}
 		}
-
-		return InsidePoints.size();
+		//*/
+		return static_cast<int>(InsidePoints.size());
 	}
 };
 
