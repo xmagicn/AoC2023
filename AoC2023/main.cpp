@@ -2157,18 +2157,151 @@ long long Year23Day11Part2(const std::string& Filename)
 	return CurrentSum;
 }
 
+void ReadDay12Input(const std::string& InLine, std::vector<char>& OutSprings, std::vector<int>& Data)
+{
+	int SplitIdx = InLine.find(' ');
+	for (int Idx = 0; Idx < SplitIdx; ++Idx)
+	{
+		OutSprings.push_back(InLine[Idx]);
+	}
+
+	int CurrIdx = SplitIdx + 1;
+	int NextIdx;
+	do
+	{
+		NextIdx = InLine.find(',', CurrIdx);
+		std::string NextNum = InLine.substr(CurrIdx, NextIdx - CurrIdx);
+		Data.push_back(std::stoi(NextNum));
+		CurrIdx = NextIdx + 1;
+	} while (NextIdx != std::string::npos);
+}
+
+bool CanSpringFitAtIndex(const std::vector<char>& Springs, int Idx, int Len)
+{
+	// Make sure Idx + Len < Springs.size()
+	if (Idx + Len > Springs.size())
+	{
+		return false;
+	}
+
+	// All have to be '?' or '#'
+	bool bAllEntriesValid = true;
+	for (int CurrIdx = Idx; CurrIdx < Idx + Len; ++CurrIdx)
+	{
+		if (Springs[CurrIdx] == '.')
+		{
+			bAllEntriesValid = false;
+			break;
+		}
+	}
+
+	// Left has to be -1 or '?' or '.'
+	int LeftIdx = Idx - 1;
+	bool bLeftValid = LeftIdx < 0 || Springs[LeftIdx] == '?' || Springs[LeftIdx] == '.';
+
+	// Right has to be size + 1 or '?' or '.'
+	int RightIdx = Idx + Len;
+	bool bRightValid = RightIdx >= Springs.size() || Springs[RightIdx] == '?' || Springs[RightIdx] == '.';
+
+	return bAllEntriesValid && bLeftValid && bRightValid;
+}
+
+int CalculateCombinations(const std::vector<char>& Springs, int SpringStartIdx, const std::vector<std::pair<int, std::vector<std::pair<int, int>>>>& Data, int DataStartIdx)
+{
+	int ComboSum = 0;
+	if (SpringStartIdx >= Springs.size() || DataStartIdx >= Data.size())
+	{
+		// Planet of the Base (Case)
+		return ComboSum;
+	}
+
+	// We can probably stop checking if we ever fail to increment
+	for (const auto& Entry : Data[DataStartIdx].second)
+	{
+		if (Entry.first >= SpringStartIdx)
+		{
+			for (int SpringCheckIdx = SpringStartIdx; SpringCheckIdx < Entry.first; ++SpringCheckIdx)
+			{
+				if (Springs[SpringCheckIdx] == '#')
+				{
+					return ComboSum;
+				}
+			}
+
+			int NewDataIdx = DataStartIdx + 1;
+			if (DataStartIdx == Data.size() - 1)
+			{
+				// If this is the last entry, do final validation
+				bool bDamagedSpringMissed = false;
+				for (int SpringCheckIdx = Entry.second; SpringCheckIdx < Springs.size(); ++SpringCheckIdx)
+				{
+					if (Springs[SpringCheckIdx] == '#')
+					{
+						bDamagedSpringMissed = true;
+						break;
+					}
+				}
+
+				if (bDamagedSpringMissed)
+				{
+					continue;
+				}
+
+				++ComboSum;
+			}
+			else
+			{
+				ComboSum += CalculateCombinations(Springs, Entry.second + 1, Data, NewDataIdx);
+			}
+		}
+	}
+
+	return ComboSum;
+}
+
+int EvaluateRowPossibilities(const std::vector<char>& Springs, const std::vector<int>& Data)
+{
+	std::vector<std::pair<int, std::vector<std::pair<int, int>>>> Possibilities;
+	for (int Entry : Data)
+	{
+		Possibilities.push_back({Entry, std::vector<std::pair<int, int>>()});
+	}
+
+	for (int Idx = 0; Idx < Springs.size(); ++Idx)
+	{
+		for (auto& Entry : Possibilities)
+		{
+			if (CanSpringFitAtIndex(Springs, Idx, Entry.first))
+			{
+				Entry.second.push_back({ Idx, Idx + Entry.first });
+			}
+		}
+	}
+
+	// somehow, combine spots, all permutations
+	return CalculateCombinations(Springs, 0, Possibilities, 0);
+}
+
 int Year23Day12Part1(const std::string& Filename)
 {
 	std::ifstream myfile;
 	myfile.open(Filename);
 
 	int CurrentSum = 0;
+	int Ct = 1;
 
 	while (myfile.good())
 	{
 		char line[256];
 		myfile.getline(line, 256);
 		std::string Line(line);
+
+		std::vector<char> Springs;
+		std::vector<int> Data;
+		ReadDay12Input(Line, Springs, Data);
+		int RowPossibilities = EvaluateRowPossibilities(Springs, Data);
+		//std::cout << Ct++ << ") " << RowPossibilities << ":\t" << Line << std::endl;
+		CurrentSum += RowPossibilities;
 	}
 
 	myfile.close();
@@ -2266,7 +2399,6 @@ int main()
 	std::cout << "Day9Part1: " << Year23Day9Part1( Day9Input ) << std::endl;
 	std::cout << "Day9Part2Sample: " << Year23Day9Part2( Day9Sample ) << std::endl;
 	std::cout << "Day9Part2: " << Year23Day9Part2( Day9Input ) << std::endl;
-	*/
 
 	std::string Day10Sample( "..\\Input\\Day10Sample.txt" );
 	std::string Day10Sample2( "..\\Input\\Day10Sample2.txt" );
@@ -2285,14 +2417,15 @@ int main()
 	std::cout << "Day11Part2Sample: " << Year23Day11Part2( Day11Sample ) << std::endl;
 	std::cout << "Day11Part2: " << Year23Day11Part2( Day11Input ) << std::endl;
 
-	/*
+	*/
 	std::string Day12Sample( "..\\Input\\Day12Sample.txt" );
 	std::string Day12Input("..\\Input\\Day12Input.txt" );
-	std::cout << "Day12Part1Sample: " << Year23Day12Part1( Day12Sample, true ) << std::endl;
-	std::cout << "Day12Part1: " << Year23Day12Part1( Day12Input, true ) << std::endl;
+	std::cout << "Day12Part1Sample: " << Year23Day12Part1( Day12Sample ) << std::endl;
+	std::cout << "Day12Part1: " << Year23Day12Part1( Day12Input ) << std::endl;
 	std::cout << "Day12Part2Sample: " << Year23Day12Part2( Day12Sample ) << std::endl;
 	std::cout << "Day12Part2: " << Year23Day12Part2( Day12Input ) << std::endl;
 
+	/*
 	std::string Day13Sample( "..\\Input\\Day13Sample.txt" );
 	std::string Day13Input("..\\Input\\Day13Input.txt" );
 	std::cout << "Day13Part1Sample: " << Year23Day13Part1( Day13Sample ) << std::endl;
