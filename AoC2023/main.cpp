@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <stack>
 #include <set>
+#include <unordered_set>
 #include <algorithm>
 #include <functional>
 
@@ -1807,16 +1808,22 @@ public:
 			}
 		}
 
+		OutLoop.push_back({ RowStart, ColStart });
+		for (auto It = FinalMapping.begin() + 1; It != FinalMapping.end(); It++ )
+		{
+			OutLoop.push_back(It->first);
+		}
+
 		return static_cast<int>(FinalMapping.size()) / 2;
 	}
 
-	bool FloodFill(const std::pair<int, int>& StartPos, const std::vector<std::pair<int, int>>& Boundary, std::vector<std::pair<int, int>>& OutPoints)
+	bool FloodFill(const std::pair<int, int>& StartPos, const std::vector<std::pair<int, int>>& Boundary, std::vector<std::pair<int, int>>& OutPoints) const
 	{
 		std::queue<std::pair<int, int>> Queue;
 		Queue.push(StartPos);
 
 		bool bInBoundary = true;
-		/*
+		//*
 		while (!Queue.empty())
 		{
 			std::pair<int, int>& CurrPos = Queue.front();
@@ -1824,21 +1831,21 @@ public:
 			
 			OutPoints.push_back(CurrPos);
 			
-			std::vector<std::pair<int, int>> Potentials = (
-				{CurrPos.first + 1, CurrPos.second}, 
-				{CurrPos.first, 	CurrPos.second + 1}, 
-				{CurrPos.first - 1, CurrPos.second}, 
+			std::vector<std::pair<int, int>> Potentials = {
+				{CurrPos.first + 1, CurrPos.second},
+				{CurrPos.first, 	CurrPos.second + 1},
+				{CurrPos.first - 1, CurrPos.second},
 				{CurrPos.first, 	CurrPos.second - 1}
-			);
+			};
 			
 			for (const auto& Potential : Potentials)
 			{
-				if (OutPoints.count(Potential) != 0)
+				if (std::count(OutPoints.begin(), OutPoints.end(), Potential) != 0)
 				{
 					continue;
 				}
 				
-				if (Boundary.count(Potential) != 0)
+				if (std::count(Boundary.begin(), Boundary.end(), Potential) != 0)
 				{
 					continue;
 				}
@@ -1859,9 +1866,10 @@ public:
 
 	int CountInsideSpaces(const std::vector<std::pair<int, int>>& Path) const
 	{
-		std::vector<std::pair<int, int>> InsidePoints;
-		std::vector<std::pair<int, int>> OutsidePoints;
-		/*
+		//std::vector<std::pair<int, int>> InsidePoints;
+		std::unordered_set<std::pair<int, int>, PairHash> InsidePoints;
+		std::unordered_set<std::pair<int, int>, PairHash> OutsidePoints;
+		//*
 		for (const auto& Entry : Path)
 		{
 			std::vector<std::pair<int, int>> EntryAdjacencies;
@@ -1886,11 +1894,17 @@ public:
 				{
 					if (bInsideLoop)
 					{
-						InsidePoints.push_back(FloodedPoints);
+						for (auto& Point : FloodedPoints)
+						{
+							InsidePoints.insert(Point);
+						}
 					}
 					else
 					{
-						OutsidePoints.push_back(FloodedPoints);
+						for (const auto& Point : FloodedPoints)
+						{
+							OutsidePoints.insert(Point);
+						}
 					}
 				}
 			}
@@ -2452,17 +2466,23 @@ int main()
 	std::cout << "Day9Part1: " << Year23Day9Part1( Day9Input ) << std::endl;
 	std::cout << "Day9Part2Sample: " << Year23Day9Part2( Day9Sample ) << std::endl;
 	std::cout << "Day9Part2: " << Year23Day9Part2( Day9Input ) << std::endl;
-
-	std::string Day10Sample( "..\\Input\\Day10Sample.txt" );
-	std::string Day10Sample2( "..\\Input\\Day10Sample2.txt" );
-	std::string Day10Input("..\\Input\\Day10Input.txt" );
-	std::cout << "Day10Part1Sample: " << Year23Day10Part1( Day10Sample ) << std::endl;
-	std::cout << "Day10Part1Sample2: " << Year23Day10Part1( Day10Sample2 ) << std::endl;
-	std::cout << "Day10Part1: " << Year23Day10Part1( Day10Input ) << std::endl;
-	std::cout << "Day10Part2Sample: " << Year23Day10Part2( Day10Sample ) << std::endl;
-	std::cout << "Day10Part2Sample2: " << Year23Day10Part2( Day10Sample2 ) << std::endl;
-	std::cout << "Day10Part2: " << Year23Day10Part2( Day10Input ) << std::endl;
-
+	*/
+	//std::string Day10Sample( "..\\Input\\Day10Sample.txt" );
+	//std::string Day10Sample2( "..\\Input\\Day10Sample2.txt" );
+	//std::string Day10Input("..\\Input\\Day10Input.txt" );
+	//std::cout << "Day10Part1Sample: " << Year23Day10Part1( Day10Sample ) << std::endl;
+	//std::cout << "Day10Part1Sample2: " << Year23Day10Part1( Day10Sample2 ) << std::endl;
+	//std::cout << "Day10Part1: " << Year23Day10Part1( Day10Input ) << std::endl;
+	//std::string Day10Part2Sample("..\\Input\\Day10Part2Sample.txt");
+	//std::string Day10Part2Sample2("..\\Input\\Day10Part2Sample2.txt");
+	//std::string Day10Part2Sample3("..\\Input\\Day10Part2Sample3.txt");
+	//std::string Day10Part2Sample4("..\\Input\\Day10Part2Sample4.txt");
+	//std::cout << "Day10Part2Sample: " << Year23Day10Part2(Day10Part2Sample) << std::endl;
+	//std::cout << "Day10Part2Sample2: " << Year23Day10Part2(Day10Part2Sample2) << std::endl;
+	//std::cout << "Day10Part2Sample3: " << Year23Day10Part2(Day10Part2Sample3) << std::endl;
+	//std::cout << "Day10Part2Sample4: " << Year23Day10Part2(Day10Part2Sample4) << std::endl;
+	//std::cout << "Day10Part2: " << Year23Day10Part2( Day10Input ) << std::endl;
+	/*
 	std::string Day11Sample( "..\\Input\\Day11Sample.txt" );
 	std::string Day11Input("..\\Input\\Day11Input.txt" );
 	std::cout << "Day11Part1Sample: " << Year23Day11Part1( Day11Sample ) << std::endl;
